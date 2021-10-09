@@ -38,6 +38,10 @@ DEFINE_int32(height, 0, "Height of rendering");
 #define FUCHSIA glm::vec3(1.00, 0, 1.00)
 #define PURPLE glm::vec3(.50, 0, .50)
 
+// global simulation parameters
+static const int kSamplesPerPixel = 5;
+static const int kMaxBouncesPerSample = 10;
+
 struct Sphere {
     const glm::vec3 color;
     const glm::vec3 center;
@@ -60,7 +64,7 @@ struct Camera {
     // produces the ray from the camera center through a particular normalized pixel coordinate
     glm::vec3 generateRay(const glm::vec2& uv) {
         glm::vec2 ccdPosition(uv.x * ccd.x - ccd.x / 2, uv.y * ccd.y - ccd.y / 2);
-        glm::vec3 ray = glm::vec3(ccdPosition.x, ccdPosition.y, -focal) - position;
+        glm::vec3 ray = glm::vec3(ccdPosition.x, -ccdPosition.y, -focal) - position;
         return glm::normalize(ray);
     }
 };
@@ -87,12 +91,10 @@ float intersectSphere(const Sphere& sphere, const glm::vec3& rayDir, const glm::
     float b = 2.0 * glm::dot(sphereToCamera, rayDir);
     float c = glm::dot(sphereToCamera, sphereToCamera) - sphere.radius * sphere.radius;
     float discriminant = b * b - 4 * a * c;
-    if (discriminant < 0){
+    if (discriminant < 0) {
        return -1.0;
     }
-    else {
-        return (-b - sqrt(discriminant)) / (2.0*a);
-    }
+    return (-b - sqrt(discriminant)) / (2.0 * a);
 }
 
 /**
@@ -103,7 +105,7 @@ float intersectSphere(const Sphere& sphere, const glm::vec3& rayDir, const glm::
 glm::vec3 findIntersection(const Scene& scene, const glm::vec3& rayDir, const Camera& camera) {
     for (const Sphere& sphere : scene.spheres) {
         float intersection = intersectSphere(sphere, rayDir, camera.position);
-        if (intersection != -1.0) {
+        if (intersection > 0) {
             return sphere.color;
         }
     }
@@ -124,7 +126,6 @@ int main(int argc, char *argv[]) {
     std::ofstream result(FLAGS_filename);
     result << "P3\n" << FLAGS_width << ' ' << FLAGS_height << "\n255\n";
     
-    const int kSamplesPerPixel = 5;
     const float imageAspectRatio = FLAGS_width / FLAGS_height;
     const float cameraCCDheight = 2.0; // nice to have ccd have size [-1, 1] by default
     const float cameraCCDwidth = cameraCCDheight * imageAspectRatio;
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
     
     Scene scene;
     scene.addSphere(FUCHSIA, glm::vec3(0.0, 0.0, -2.0), 1.0);
+    scene.addSphere(GREEN, glm::vec3(0.0, -10.0, -2.5), 10.0);
     
     for (int row = 0; row < FLAGS_height; row++) {
         for (int col = 0; col < FLAGS_width; col++) {
