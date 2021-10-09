@@ -20,6 +20,8 @@
 DEFINE_string(filename, "", "Output file for rendering");
 DEFINE_int32(width, 0, "Width of rendering");
 DEFINE_int32(height, 0, "Height of rendering");
+DEFINE_int32(samples, 5, "Number of samples per pixel");
+DEFINE_int32(bounces, 1, "Depth of bounces");
 
 #define WHITE glm::vec3(1.00, 1.00, 1.00)
 #define SILVER glm::vec3(.75, .75, .75)
@@ -37,10 +39,6 @@ DEFINE_int32(height, 0, "Height of rendering");
 #define NAVY glm::vec3(0, 0, .50)
 #define FUCHSIA glm::vec3(1.00, 0, 1.00)
 #define PURPLE glm::vec3(.50, 0, .50)
-
-// global simulation parameters
-static const int kSamplesPerPixel = 5;
-static const int kMaxBouncesPerSample = 10;
 
 struct Ray {
     glm::vec3 direction;
@@ -115,12 +113,12 @@ glm::vec3 visualizeNormal(const glm::vec3& center, const glm::vec3& spherePoint)
 glm::vec3 sampleUnitSphere() {
     while (true) {
         glm::vec3 proposal(
-                           static_cast <float> (rand()) / static_cast <float> (RAND_MAX),
-                           static_cast <float> (rand()) / static_cast <float> (RAND_MAX),
-                           static_cast <float> (rand()) / static_cast <float> (RAND_MAX)
+                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
+                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
+                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5)
                            );
-        if (proposal.length() <= 1.0) {
-            return glm::normalize(proposal);
+        if (glm::length(proposal) <= 1.0) {
+            return proposal;
         }
     }
 }
@@ -131,16 +129,18 @@ glm::vec3 sampleUnitSphere() {
  *
  */
 glm::vec3 findIntersection(const Scene& scene, const Ray& ray, const Camera& camera, int bounce) {
-    if (bounce > kMaxBouncesPerSample) {
+//    std::cout << bounce << std::endl;
+    if (bounce >= FLAGS_bounces) {
         return BLACK;
     }
     
     for (const Sphere& sphere : scene.spheres) {
         float intersection = intersectSphere(sphere, ray);
         if (intersection > 0) {
-//            return visualizeNormal(sphere.center, ray.origin + ray.direction * intersection);
             glm::vec3 newOrigin = ray.direction * intersection;
-            glm::vec3 newDirection = sampleUnitSphere();
+            glm::vec3 normal = glm::normalize(newOrigin - sphere.center);
+            glm::vec3 newDirection = glm::normalize(normal + sampleUnitSphere());
+            
             return 0.5f * findIntersection(scene, Ray(newDirection, newOrigin), camera, bounce + 1);
         }
     }
@@ -170,12 +170,12 @@ int main(int argc, char *argv[]) {
     
     Scene scene;
     scene.addSphere(FUCHSIA, glm::vec3(0.0, 0.0, -2.0), 1.0);
-    scene.addSphere(GREEN, glm::vec3(0.0, -10.0, -2.5), 10.0);
+    scene.addSphere(GREEN, glm::vec3(0.0, -101.0, -2.0), 100.0);
     
     for (int row = 0; row < FLAGS_height; row++) {
         for (int col = 0; col < FLAGS_width; col++) {
             glm::vec3 color(0, 0, 0);
-            for (int sample = 0; sample < kSamplesPerPixel; sample++) {
+            for (int sample = 0; sample < FLAGS_samples; sample++) {
                 // TODO: here is one spot where sampling can be done more intelligently! just uniform right now
                 glm::vec2 uv(
                              ((float)col + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) / FLAGS_width,
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
                 Ray ray = camera.generateRay(uv); // implicit origin of rays is the camera position
                 color += findIntersection(scene, ray, camera, 0);
             }
-            color /= kSamplesPerPixel;
+            color /= FLAGS_samples;
             writeColor(result, color);
         }
     }
