@@ -107,15 +107,20 @@ struct Lambertian : public Material {
 
 struct Metal : public Material {
     color texture;
+    float roughness;
 
-    Metal(const color& texture) : texture(texture) {}
+    Metal(const color& texture, float roughness) : texture(texture), roughness(roughness) {}
     
     const bool scatter(const Ray& in,
                  const glm::vec3& intersection,
                  const glm::vec3& normal,
                  Ray& out,
                  color& outColor) const override {
-        glm::vec3 outDirection = glm::normalize(in.direction - 2 * dot(in.direction, normal) * normal);
+        glm::vec3 outDirection = in.direction - 2 * dot(in.direction, normal) * normal;
+        // have some degree of scattering in the BRDF if material is modelled as being rough
+        outDirection += sampleUnitSphere() * roughness;
+        outDirection = glm::normalize(outDirection);
+        
         out = Ray(outDirection, intersection);
         outColor = texture;
         return true;
@@ -241,8 +246,8 @@ int main(int argc, char *argv[]) {
     
     Scene scene;
     scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 0.6, std::make_shared<Lambertian>(PEACH));
-    scene.addSphere(glm::vec3(-1.2, 0.0, -2.0),0.4, std::make_shared<Metal>(LIGHT_GRAY));
-    scene.addSphere(glm::vec3(1.2, 0.0, -2.0), 0.5, std::make_shared<Metal>(BEIGE));
+    scene.addSphere(glm::vec3(-1.2, 0.0, -2.0),0.5, std::make_shared<Metal>(LIGHT_GRAY, 0.1));
+    scene.addSphere(glm::vec3(1.4, 0.0, -2.0), 0.7, std::make_shared<Metal>(BEIGE, 0.7));
     scene.addSphere(glm::vec3(0.0, -101.0, -2.0), 100.0, std::make_shared<Lambertian>(GREEN));
     
     for (int row = 0; row < FLAGS_height; row++) {
