@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
     std::ofstream result(FLAGS_filename);
     result << "P3\n" << FLAGS_width << ' ' << FLAGS_height << "\n255\n";
     
+    const int kSamplesPerPixel = 5;
     const float imageAspectRatio = FLAGS_width / FLAGS_height;
     const float cameraCCDheight = 2.0; // nice to have ccd have size [-1, 1] by default
     const float cameraCCDwidth = cameraCCDheight * imageAspectRatio;
@@ -135,10 +136,16 @@ int main(int argc, char *argv[]) {
     
     for (int row = 0; row < FLAGS_height; row++) {
         for (int col = 0; col < FLAGS_width; col++) {
-            glm::vec2 uv(((float)col) / FLAGS_width, ((float)row) / FLAGS_height);
-            glm::vec3 ray = camera.generateRay(uv); // implicit origin of rays is the camera position
-            
-            glm::vec3 color = findIntersection(scene, ray, camera);
+            glm::vec3 color(0, 0, 0);
+            for (int sample = 0; sample < kSamplesPerPixel; sample++) {
+                // TODO: here is one spot where sampling can be done more intelligently! just uniform right now
+                glm::vec2 uv(
+                             ((float)col + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) / FLAGS_width,
+                             ((float)row + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) / FLAGS_height);
+                glm::vec3 ray = camera.generateRay(uv); // implicit origin of rays is the camera position
+                color += findIntersection(scene, ray, camera);
+            }
+            color /= kSamplesPerPixel;
             writeColor(result, color);
         }
     }
