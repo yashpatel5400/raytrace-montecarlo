@@ -23,39 +23,93 @@ DEFINE_int32(height, 0, "Height of rendering");
 DEFINE_int32(samples, 5, "Number of samples per pixel");
 DEFINE_int32(bounces, 1, "Depth of bounces");
 
-#define WHITE glm::vec3(1.00, 1.00, 1.00)
-#define SILVER glm::vec3(.75, .75, .75)
-#define GRAY glm::vec3(.50, .50, .50)
-#define BLACK glm::vec3(0, 0, 0)
-#define RED glm::vec3(1.00, 0, 0)
-#define MAROON glm::vec3(.50, 0, 0)
-#define YELLOW glm::vec3(1.00, 1.00, 0)
-#define OLIVE glm::vec3(.50, .50, 0)
-#define LIME glm::vec3(0, 1.00, 0)
-#define GREEN glm::vec3(0, .50, 0)
-#define AQUA glm::vec3(0, 1.00, 1.00)
-#define TEAL glm::vec3(0, .50, .50)
-#define BLUE glm::vec3(0, 0, 1.00)
-#define NAVY glm::vec3(0, 0, .50)
-#define FUCHSIA glm::vec3(1.00, 0, 1.00)
-#define PURPLE glm::vec3(.50, 0, .50)
+using color = glm::vec3;
+
+#define WHITE color(1.00, 1.00, 1.00)
+#define SILVER color(.75, .75, .75)
+#define GRAY color(.50, .50, .50)
+#define BLACK color(0, 0, 0)
+#define RED color(1.00, 0, 0)
+#define MAROON color(.50, 0, 0)
+#define YELLOW color(1.00, 1.00, 0)
+#define OLIVE color(.50, .50, 0)
+#define LIME color(0, 1.00, 0)
+#define GREEN color(0, .50, 0)
+#define AQUA color(0, 1.00, 1.00)
+#define TEAL color(0, .50, .50)
+#define BLUE color(0, 0, 1.00)
+#define NAVY color(0, 0, .50)
+#define FUCHSIA color(1.00, 0, 1.00)
+#define PURPLE color(.50, 0, .50)
 
 struct Ray {
     glm::vec3 direction;
     glm::vec3 origin;
     
+    Ray() {
+        direction = glm::vec3(0, 0, 0);
+        origin = glm::vec3(0, 0, 0);
+    }
+    
     Ray(const glm::vec3& direction,
            const glm::vec3& origin) : direction(direction), origin(origin) {}
 };
 
+// TODO: here is the other major spot for improving sampling from the BRDF function
+glm::vec3 sampleUnitSphere() {
+    while (true) {
+        glm::vec3 proposal(
+                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
+                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
+                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5)
+                           );
+        if (glm::length(proposal) <= 1.0) {
+            return proposal;
+        }
+    }
+}
+
+// materials are characterized by their BRDF/BDTF, so these abstract methods are left to implementations
+struct Material {
+    // returns whether or not a scatter happened (could have been absorbed) and populates out ray/color if so
+    virtual const bool scatter(const Ray& in,
+                         const glm::vec3& intersection,
+                         const glm::vec3& normal,
+                         Ray& out,
+                         color& outColor) const = 0;
+};
+
+struct Lambertian : public Material {
+    color texture;
+
+    Lambertian(const color& texture) : texture(texture) {}
+    
+    const bool scatter(const Ray& in,
+                 const glm::vec3& intersection,
+                 const glm::vec3& normal,
+                 Ray& out,
+                 color& outColor) const override {
+        glm::vec3 outDirection = glm::normalize(normal + sampleUnitSphere());
+        
+        // edge case that we should avoid
+        const float kSmidgen = 1e-5;
+        if (fabs(outDirection.x) < kSmidgen && fabs(outDirection.y) < kSmidgen && fabs(outDirection.z) < kSmidgen) {
+            outDirection = normal;
+        }
+        out = Ray(outDirection, intersection);
+        outColor = texture;
+        return true;
+    }
+};
+
 struct Sphere {
-    const glm::vec3 color;
     const glm::vec3 center;
     float radius;
+    const std::shared_ptr<Material> material;
     
-    Sphere(const glm::vec3& color,
-           const glm::vec3& center,
-           float radius) : color(color), center(center), radius(radius) {}
+    Sphere(const glm::vec3& center,
+           float radius,
+           const std::shared_ptr<Material> material) : center(center), radius(radius), material(material) {}
 };
 
 struct Camera {
@@ -79,8 +133,8 @@ struct Camera {
 struct Scene {
     std::vector<Sphere> spheres;
     
-    void addSphere(const glm::vec3& color, const glm::vec3& center, float radius) {
-        spheres.push_back(Sphere(color, center, radius));
+    void addSphere(const glm::vec3& center, float radius, const std::shared_ptr<Material> material) {
+        spheres.push_back(Sphere(center, radius, material));
     }
 };
 
@@ -111,20 +165,6 @@ glm::vec3 visualizeNormal(const glm::vec3& center, const glm::vec3& spherePoint)
     return glm::vec3(normal.x + 1, normal.y + 1, normal.z + 1) * 0.5f;
 }
 
-// TODO: here is the other major spot for improving sampling from the BRDF function
-glm::vec3 sampleUnitSphere() {
-    while (true) {
-        glm::vec3 proposal(
-                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
-                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
-                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5)
-                           );
-        if (glm::length(proposal) <= 1.0) {
-            return proposal;
-        }
-    }
-}
-
 /**
  * returns color for the intersection of the ray with the scene. note that THIS is
  * where all the interesting Monte Carlo sampling will be happening!
@@ -139,11 +179,20 @@ glm::vec3 findIntersection(const Scene& scene, const Ray& ray, const Camera& cam
     for (const Sphere& sphere : scene.spheres) {
         float intersection = intersectSphere(sphere, ray);
         if (intersection > 0) {
-            glm::vec3 newOrigin = ray.direction * intersection;
-            glm::vec3 normal = glm::normalize(newOrigin - sphere.center);
-            glm::vec3 newDirection = glm::normalize(normal + sampleUnitSphere());
-            
-            return 0.5f * findIntersection(scene, Ray(newDirection, newOrigin), camera, bounce + 1);
+            glm::vec3 intersectionPoint = ray.direction * intersection;
+            glm::vec3 normal = glm::normalize(intersectionPoint - sphere.center);
+
+            Ray scatteredRay;
+            color scatteredColor;
+            bool didScatter = sphere.material->scatter(ray,
+                           intersectionPoint,
+                           normal,
+                           scatteredRay,
+                           scatteredColor);
+            if (!didScatter) {
+                return BLACK;
+            }
+            return scatteredColor * findIntersection(scene, scatteredRay, camera, bounce + 1);
         }
     }
     
@@ -171,8 +220,8 @@ int main(int argc, char *argv[]) {
     Camera camera(glm::vec3(0, 0, 0), glm::vec2(cameraCCDwidth, cameraCCDheight), 1.0);
     
     Scene scene;
-    scene.addSphere(FUCHSIA, glm::vec3(0.0, 0.0, -2.0), 1.0);
-    scene.addSphere(GREEN, glm::vec3(0.0, -101.0, -2.0), 100.0);
+    scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 1.0, std::make_shared<Lambertian>(FUCHSIA));
+    scene.addSphere(glm::vec3(0.0, -101.0, -2.0), 100.0, std::make_shared<Lambertian>(GREEN));
     
     for (int row = 0; row < FLAGS_height; row++) {
         for (int col = 0; col < FLAGS_width; col++) {
