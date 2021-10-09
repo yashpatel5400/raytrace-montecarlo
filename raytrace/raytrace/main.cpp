@@ -41,6 +41,9 @@ using color = glm::vec3;
 #define NAVY color(0, 0, .50)
 #define FUCHSIA color(1.00, 0, 1.00)
 #define PURPLE color(.50, 0, .50)
+#define PEACH color(0.7, 0.3, 0.3)
+#define LIGHT_GRAY color(0.8, 0.8, 0.8)
+#define BEIGE color(0.8, 0.6, 0.2)
 
 struct Ray {
     glm::vec3 direction;
@@ -96,6 +99,23 @@ struct Lambertian : public Material {
         if (fabs(outDirection.x) < kSmidgen && fabs(outDirection.y) < kSmidgen && fabs(outDirection.z) < kSmidgen) {
             outDirection = normal;
         }
+        out = Ray(outDirection, intersection);
+        outColor = texture;
+        return true;
+    }
+};
+
+struct Metal : public Material {
+    color texture;
+
+    Metal(const color& texture) : texture(texture) {}
+    
+    const bool scatter(const Ray& in,
+                 const glm::vec3& intersection,
+                 const glm::vec3& normal,
+                 Ray& out,
+                 color& outColor) const override {
+        glm::vec3 outDirection = glm::normalize(in.direction - 2 * dot(in.direction, normal) * normal);
         out = Ray(outDirection, intersection);
         outColor = texture;
         return true;
@@ -220,7 +240,9 @@ int main(int argc, char *argv[]) {
     Camera camera(glm::vec3(0, 0, 0), glm::vec2(cameraCCDwidth, cameraCCDheight), 1.0);
     
     Scene scene;
-    scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 1.0, std::make_shared<Lambertian>(FUCHSIA));
+    scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 0.6, std::make_shared<Lambertian>(PEACH));
+    scene.addSphere(glm::vec3(-1.2, 0.0, -2.0),0.4, std::make_shared<Metal>(LIGHT_GRAY));
+    scene.addSphere(glm::vec3(1.2, 0.0, -2.0), 0.5, std::make_shared<Metal>(BEIGE));
     scene.addSphere(glm::vec3(0.0, -101.0, -2.0), 100.0, std::make_shared<Lambertian>(GREEN));
     
     for (int row = 0; row < FLAGS_height; row++) {
