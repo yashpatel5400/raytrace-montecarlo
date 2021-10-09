@@ -17,9 +17,9 @@
 #include <glm/mat4x4.hpp> // glm::mat4
 #include <glm/gtx/string_cast.hpp>
 
-DEFINE_string(filename, "", "Desired output file for rendering");
-DEFINE_int32(width, 0, "Desired width of rendering");
-DEFINE_int32(height, 0, "Desired height of rendering");
+DEFINE_string(filename, "", "Output file for rendering");
+DEFINE_int32(width, 0, "Width of rendering");
+DEFINE_int32(height, 0, "Height of rendering");
 
 #define WHITE glm::vec3(1.00, 1.00, 1.00)
 #define SILVER glm::vec3(.75, .75, .75)
