@@ -97,8 +97,8 @@ float intersectSphere(const Sphere& sphere, const glm::vec3& rayDir, const glm::
     return (-b - sqrt(discriminant)) / (2.0 * a);
 }
 
-glm::vec3 visualizeNormal(const glm::vec3& spherePoint) {
-    glm::vec3 normal = glm::normalize(spherePoint - glm::vec3(0, 0, -2));
+glm::vec3 visualizeNormal(const glm::vec3& center, const glm::vec3& spherePoint) {
+    glm::vec3 normal = glm::normalize(spherePoint - center);
     return glm::vec3(normal.x + 1, normal.y + 1, normal.z + 1) * 0.5f;
 }
 
@@ -111,7 +111,7 @@ glm::vec3 findIntersection(const Scene& scene, const glm::vec3& rayDir, const Ca
     for (const Sphere& sphere : scene.spheres) {
         float intersection = intersectSphere(sphere, rayDir, camera.position);
         if (intersection > 0) {
-            return visualizeNormal(rayDir * intersection);
+            return visualizeNormal(rayDir * intersection, sphere.center);
         }
     }
     
