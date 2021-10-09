@@ -111,21 +111,37 @@ glm::vec3 visualizeNormal(const glm::vec3& center, const glm::vec3& spherePoint)
     return glm::vec3(normal.x + 1, normal.y + 1, normal.z + 1) * 0.5f;
 }
 
+// TODO: here is the other major spot for improving sampling from the BRDF function
+glm::vec3 sampleUnitSphere() {
+    while (true) {
+        glm::vec3 proposal(
+                           static_cast <float> (rand()) / static_cast <float> (RAND_MAX),
+                           static_cast <float> (rand()) / static_cast <float> (RAND_MAX),
+                           static_cast <float> (rand()) / static_cast <float> (RAND_MAX)
+                           );
+        if (proposal.length() <= 1.0) {
+            return glm::normalize(proposal);
+        }
+    }
+}
+
 /**
  * returns color for the intersection of the ray with the scene. note that THIS is
  * where all the interesting Monte Carlo sampling will be happening!
  *
  */
 glm::vec3 findIntersection(const Scene& scene, const Ray& ray, const Camera& camera, int bounce) {
-//    if (bounce > kMaxBouncesPerSample) {
-//        return BLACK;
-//    }
+    if (bounce > kMaxBouncesPerSample) {
+        return BLACK;
+    }
     
     for (const Sphere& sphere : scene.spheres) {
         float intersection = intersectSphere(sphere, ray);
         if (intersection > 0) {
-            return visualizeNormal(sphere.center, ray.origin + ray.direction * intersection);
-//            return 0.5f * findIntersection(scene, ray.direction * intersection, camera, bounce + 1);
+//            return visualizeNormal(sphere.center, ray.origin + ray.direction * intersection);
+            glm::vec3 newOrigin = ray.direction * intersection;
+            glm::vec3 newDirection = sampleUnitSphere();
+            return 0.5f * findIntersection(scene, Ray(newDirection, newOrigin), camera, bounce + 1);
         }
     }
     
