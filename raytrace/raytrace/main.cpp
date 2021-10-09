@@ -42,6 +42,14 @@ DEFINE_int32(height, 0, "Height of rendering");
 static const int kSamplesPerPixel = 5;
 static const int kMaxBouncesPerSample = 10;
 
+struct Ray {
+    glm::vec3 direction;
+    glm::vec3 origin;
+    
+    Ray(const glm::vec3& direction,
+           const glm::vec3& origin) : direction(direction), origin(origin) {}
+};
+
 struct Sphere {
     const glm::vec3 color;
     const glm::vec3 center;
@@ -62,10 +70,11 @@ struct Camera {
            float focal) : position(position), ccd(ccd), focal(focal) {}
     
     // produces the ray from the camera center through a particular normalized pixel coordinate
-    glm::vec3 generateRay(const glm::vec2& uv) {
+    Ray generateRay(const glm::vec2& uv) {
         glm::vec2 ccdPosition(uv.x * ccd.x - ccd.x / 2, uv.y * ccd.y - ccd.y / 2);
         glm::vec3 ray = glm::vec3(ccdPosition.x, -ccdPosition.y, -focal) - position;
-        return glm::normalize(ray);
+        glm::vec3 direction = glm::normalize(ray);
+        return Ray(direction, position);
     }
 };
 
@@ -85,11 +94,11 @@ void writeColor(std::ofstream &out, glm::vec3& color) {
 }
 
 // borrowed from https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection
-float intersectSphere(const Sphere& sphere, const glm::vec3& rayDir, const glm::vec3& rayOrigin) {
-    glm::vec3 sphereToCamera = rayOrigin - sphere.center;
-    float a = glm::dot(rayDir, rayDir);
-    float b = 2.0 * glm::dot(sphereToCamera, rayDir);
-    float c = glm::dot(sphereToCamera, sphereToCamera) - sphere.radius * sphere.radius;
+float intersectSphere(const Sphere& sphere, const Ray& ray) {
+    glm::vec3 sphereToOrigin = ray.origin - sphere.center;
+    float a = glm::dot(ray.direction, ray.direction);
+    float b = 2.0 * glm::dot(sphereToOrigin, ray.direction);
+    float c = glm::dot(sphereToOrigin, sphereToOrigin) - sphere.radius * sphere.radius;
     float discriminant = b * b - 4 * a * c;
     if (discriminant < 0) {
        return -1.0;
@@ -107,15 +116,20 @@ glm::vec3 visualizeNormal(const glm::vec3& center, const glm::vec3& spherePoint)
  * where all the interesting Monte Carlo sampling will be happening!
  *
  */
-glm::vec3 findIntersection(const Scene& scene, const glm::vec3& rayDir, const Camera& camera) {
+glm::vec3 findIntersection(const Scene& scene, const Ray& ray, const Camera& camera, int bounce) {
+//    if (bounce > kMaxBouncesPerSample) {
+//        return BLACK;
+//    }
+    
     for (const Sphere& sphere : scene.spheres) {
-        float intersection = intersectSphere(sphere, rayDir, camera.position);
+        float intersection = intersectSphere(sphere, ray);
         if (intersection > 0) {
-            return visualizeNormal(rayDir * intersection, sphere.center);
+            return visualizeNormal(sphere.center, ray.origin + ray.direction * intersection);
+//            return 0.5f * findIntersection(scene, ray.direction * intersection, camera, bounce + 1);
         }
     }
     
-    float t = 0.5 * (rayDir.y + 1.0);
+    float t = 0.5 * (ray.direction.y + 1.0);
     return glm::vec3(1.0, 1.0, 1.0) * (1.0f - t) + glm::vec3(0.5, 0.7, 1.0) * t;
 }
 
@@ -150,8 +164,8 @@ int main(int argc, char *argv[]) {
                 glm::vec2 uv(
                              ((float)col + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) / FLAGS_width,
                              ((float)row + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) / FLAGS_height);
-                glm::vec3 ray = camera.generateRay(uv); // implicit origin of rays is the camera position
-                color += findIntersection(scene, ray, camera);
+                Ray ray = camera.generateRay(uv); // implicit origin of rays is the camera position
+                color += findIntersection(scene, ray, camera, 0);
             }
             color /= kSamplesPerPixel;
             writeColor(result, color);
