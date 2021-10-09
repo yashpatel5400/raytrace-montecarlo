@@ -97,6 +97,11 @@ float intersectSphere(const Sphere& sphere, const glm::vec3& rayDir, const glm::
     return (-b - sqrt(discriminant)) / (2.0 * a);
 }
 
+glm::vec3 visualizeNormal(const glm::vec3& spherePoint) {
+    glm::vec3 normal = glm::normalize(spherePoint - glm::vec3(0, 0, -2));
+    return glm::vec3(normal.x + 1, normal.y + 1, normal.z + 1) * 0.5f;
+}
+
 /**
  * returns color for the intersection of the ray with the scene. note that THIS is
  * where all the interesting Monte Carlo sampling will be happening!
@@ -106,8 +111,7 @@ glm::vec3 findIntersection(const Scene& scene, const glm::vec3& rayDir, const Ca
     for (const Sphere& sphere : scene.spheres) {
         float intersection = intersectSphere(sphere, rayDir, camera.position);
         if (intersection > 0) {
-            glm::vec3 normal = glm::normalize(rayDir * intersection - glm::vec3(0, 0, -2));
-            return glm::vec3(normal.x + 1, normal.y + 1, normal.z + 1) * 0.5f;
+            return visualizeNormal(rayDir * intersection);
         }
     }
     
