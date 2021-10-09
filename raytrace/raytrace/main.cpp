@@ -61,7 +61,7 @@ struct Camera {
     glm::vec3 generateRay(const glm::vec2& uv) {
         glm::vec2 ccdPosition(uv.x * ccd.x - ccd.x / 2, uv.y * ccd.y - ccd.y / 2);
         glm::vec3 ray = glm::vec3(ccdPosition.x, ccdPosition.y, -focal) - position;
-        return ray;
+        return glm::normalize(ray);
     }
 };
 
@@ -80,13 +80,35 @@ void writeColor(std::ofstream &out, glm::vec3& color) {
         << static_cast<int>(255 * color.z) << '\n';
 }
 
+// borrowed from https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection
+float intersectSphere(const Sphere& sphere, const glm::vec3& rayDir, const glm::vec3& rayOrigin) {
+    glm::vec3 sphereToCamera = rayOrigin - sphere.center;
+    float a = glm::dot(rayDir, rayDir);
+    float b = 2.0 * glm::dot(sphereToCamera, rayDir);
+    float c = glm::dot(sphereToCamera, sphereToCamera) - sphere.radius * sphere.radius;
+    float discriminant = b * b - 4 * a * c;
+    if (discriminant < 0){
+       return -1.0;
+    }
+    else {
+        return (-b - sqrt(discriminant)) / (2.0*a);
+    }
+}
+
 /**
  * returns color for the intersection of the ray with the scene. note that THIS is
  * where all the interesting Monte Carlo sampling will be happening!
  *
  */
-glm::vec3 findIntersection(const Scene& scene, glm::vec3& ray) {
-    return BLACK;
+glm::vec3 findIntersection(const Scene& scene, const glm::vec3& rayDir, const Camera& camera) {
+    for (const Sphere& sphere : scene.spheres) {
+        float intersection = intersectSphere(sphere, rayDir, camera.position);
+        if (intersection != -1.0) {
+            return sphere.color;
+        }
+    }
+    
+    return BLACK; // background is assumed black for now
 }
 
 /**
@@ -109,14 +131,14 @@ int main(int argc, char *argv[]) {
     Camera camera(glm::vec3(0, 0, 0), glm::vec2(cameraCCDwidth, cameraCCDheight), 1.0);
     
     Scene scene;
-    scene.addSphere(FUCHSIA, glm::vec3(0, 3.0, 0), 2.0);
+    scene.addSphere(FUCHSIA, glm::vec3(0.0, 0.0, -2.0), 1.0);
     
     for (int row = 0; row < FLAGS_height; row++) {
         for (int col = 0; col < FLAGS_width; col++) {
             glm::vec2 uv(((float)col) / FLAGS_width, ((float)row) / FLAGS_height);
-            glm::vec3 ray = camera.generateRay(uv);
+            glm::vec3 ray = camera.generateRay(uv); // implicit origin of rays is the camera position
             
-            glm::vec3 color(ray.x, 0, 0);
+            glm::vec3 color = findIntersection(scene, ray, camera);
             writeColor(result, color);
         }
     }
