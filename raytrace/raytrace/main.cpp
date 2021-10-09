@@ -86,9 +86,11 @@ struct Scene {
 
 void writeColor(std::ofstream &out, glm::vec3& color) {
     // Write the translated [0,255] value of each color component.
-    out << static_cast<int>(255 * color.x) << ' '
-        << static_cast<int>(255 * color.y) << ' '
-        << static_cast<int>(255 * color.z) << '\n';
+    float gammaCorrection = 1.0f / FLAGS_samples;
+    
+    out << static_cast<int>(255 * sqrt(color.x * gammaCorrection)) << ' '
+        << static_cast<int>(255 * sqrt(color.y * gammaCorrection)) << ' '
+        << static_cast<int>(255 * sqrt(color.z * gammaCorrection)) << '\n';
 }
 
 // borrowed from https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection
