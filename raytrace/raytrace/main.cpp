@@ -76,10 +76,11 @@ glm::vec3 sampleUnitSphere() {
 struct Material {
     // returns whether or not a scatter happened (could have been absorbed) and populates out ray/color if so
     virtual const bool scatter(const Ray& in,
-                         const glm::vec3& intersection,
-                         const glm::vec3& normal,
-                         Ray& out,
-                         color& outColor) const = 0;
+                               const glm::vec3& intersection,
+                               const glm::vec3& normal,
+                               const bool inside,
+                               Ray& out,
+                               color& outColor) const = 0;
 };
 
 struct Lambertian : public Material {
@@ -88,10 +89,11 @@ struct Lambertian : public Material {
     Lambertian(const color& texture) : texture(texture) {}
     
     const bool scatter(const Ray& in,
-                 const glm::vec3& intersection,
-                 const glm::vec3& normal,
-                 Ray& out,
-                 color& outColor) const override {
+                       const glm::vec3& intersection,
+                       const glm::vec3& normal,
+                       const bool inside,
+                       Ray& out,
+                       color& outColor) const override {
         glm::vec3 outDirection = glm::normalize(normal + sampleUnitSphere());
         
         // edge case that we should avoid
@@ -112,17 +114,42 @@ struct Metal : public Material {
     Metal(const color& texture, float roughness) : texture(texture), roughness(roughness) {}
     
     const bool scatter(const Ray& in,
-                 const glm::vec3& intersection,
-                 const glm::vec3& normal,
-                 Ray& out,
-                 color& outColor) const override {
-        glm::vec3 outDirection = in.direction - 2 * dot(in.direction, normal) * normal;
+                       const glm::vec3& intersection,
+                       const glm::vec3& normal,
+                       const bool inside,
+                       Ray& out,
+                       color& outColor) const override {
+        glm::vec3 outDirection = glm::reflect(in.direction, normal);
         // have some degree of scattering in the BRDF if material is modelled as being rough
         outDirection += sampleUnitSphere() * roughness;
         outDirection = glm::normalize(outDirection);
         
         out = Ray(outDirection, intersection);
         outColor = texture;
+        return true;
+    }
+};
+
+struct Dielectric : public Material {
+    float ior;
+    
+    Dielectric(const float ior) : ior(ior) {}
+    
+    const bool scatter(const Ray& in,
+                       const glm::vec3& intersection,
+                       const glm::vec3& normal,
+                       const bool inside,
+                       Ray& out,
+                       color& outColor) const override {
+        float cosTheta = glm::dot(-in.direction, normal);
+        float sinTheta = sqrt(1 - cosTheta * cosTheta);
+        
+        float eta = !inside ? 1.0 / ior : ior;
+        glm::vec3 outDirection = sinTheta * eta > 1.0
+            ? glm::reflect(in.direction, normal)
+            : glm::refract(in.direction, normal, eta);
+        out = Ray(outDirection, intersection);
+        outColor = WHITE;
         return true;
     }
 };
@@ -206,14 +233,16 @@ glm::vec3 findIntersection(const Scene& scene, const Ray& ray, const Camera& cam
         if (intersection > 0) {
             glm::vec3 intersectionPoint = ray.direction * intersection;
             glm::vec3 normal = glm::normalize(intersectionPoint - sphere.center);
+            bool inside = glm::dot(ray.direction, normal) > 0;
 
             Ray scatteredRay;
             color scatteredColor;
             bool didScatter = sphere.material->scatter(ray,
-                           intersectionPoint,
-                           normal,
-                           scatteredRay,
-                           scatteredColor);
+                                                       intersectionPoint,
+                                                       normal,
+                                                       inside,
+                                                       scatteredRay,
+                                                       scatteredColor);
             if (!didScatter) {
                 return BLACK;
             }
@@ -247,7 +276,7 @@ int main(int argc, char *argv[]) {
     Scene scene;
     scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 0.6, std::make_shared<Lambertian>(PEACH));
     scene.addSphere(glm::vec3(-1.2, 0.0, -2.0),0.5, std::make_shared<Metal>(LIGHT_GRAY, 0.1));
-    scene.addSphere(glm::vec3(1.4, 0.0, -2.0), 0.7, std::make_shared<Metal>(BEIGE, 0.7));
+    scene.addSphere(glm::vec3(1.4, 0.0, -2.0), 0.7, std::make_shared<Dielectric>(1.5));
     scene.addSphere(glm::vec3(0.0, -101.0, -2.0), 100.0, std::make_shared<Lambertian>(GREEN));
     
     for (int row = 0; row < FLAGS_height; row++) {
