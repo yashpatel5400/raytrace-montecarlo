@@ -145,7 +145,14 @@ struct Dielectric : public Material {
         float sinTheta = sqrt(1 - cosTheta * cosTheta);
         
         float eta = !inside ? 1.0 / ior : ior;
-        glm::vec3 outDirection = sinTheta * eta > 1.0
+        
+        // Schlick's approximation to determine whether we want to reflect or refract
+        float r0 = (1 - eta) / (1 + eta);
+        float r02 = r0 * r0;
+        float rTheta = r02 + (1 - r02) * pow((1 - cosTheta), 5.0);
+        float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        
+        glm::vec3 outDirection = sinTheta * eta > 1.0 || random < rTheta
             ? glm::reflect(in.direction, normal)
             : glm::refract(in.direction, normal, eta);
         out = Ray(outDirection, intersection);
