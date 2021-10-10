@@ -71,10 +71,10 @@ const bool Dielectric::scatter(const Ray& in,
                    const bool inside,
                    Ray& out,
                    Color& outColor) const {
-    float cosTheta = glm::dot(-in.direction, normal);
+    float cosTheta = fmin(glm::dot(-in.direction, normal), 1.0);
     float sinTheta = sqrt(1 - cosTheta * cosTheta);
     
-    float eta = !inside ? 1.0 / ior : ior;
+    float eta = inside ? ior : 1.0 / ior;
     
     // Schlick's approximation to determine whether we want to reflect or refract
     float r0 = (1 - eta) / (1 + eta);
