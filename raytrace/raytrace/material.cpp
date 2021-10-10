@@ -60,7 +60,7 @@ const bool Metal::scatter(const Ray& in,
     
     out = Ray(outDirection, intersection);
     outColor = texture;
-    return true;
+    return glm::dot(outDirection, normal) > 0;
 }
 
 Dielectric::Dielectric(const float ior) : ior(ior) {}

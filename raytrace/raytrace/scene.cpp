@@ -15,22 +15,21 @@
 Scene generateScene() {
     Scene scene;
     
-    scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 1.0, std::make_shared<Lambertian>(PEACH));
-    scene.addSphere(glm::vec3(-2.2, 0.0, -2.0),1.0, std::make_shared<Metal>(LIGHT_GRAY, 0.1));
-    scene.addSphere(glm::vec3(2.4, 0.0, -2.0), 1.0, std::make_shared<Dielectric>(1.5));
-    scene.addSphere(glm::vec3(0.0, -101.0, -2.0), 100.0, std::make_shared<Lambertian>(BEIGE));
+    scene.addSphere(glm::vec3(0.0, 0.0, -3.5), 0.5, std::make_shared<Lambertian>(PEACH));
+    scene.addSphere(glm::vec3(2.2, 0.5, -2.5), 1.0, std::make_shared<Metal>(AQUA, 0.1));
+    scene.addSphere(glm::vec3(-2.4, 0.3, -2.0), 0.8, std::make_shared<Dielectric>(1.5));
+    scene.addSphere(glm::vec3(0.0, -1000.5, -2.0), 1000.0, std::make_shared<Lambertian>(BEIGE));
 
     const int kBallGridSize = 5;
     const float kBallRadius = 0.3;
 
     for (int a = -kBallGridSize; a < kBallGridSize; a++) {
-        for (int b = -kBallGridSize; b < 0; b++) {
+        for (int b = -kBallGridSize; b < -1; b++) {
             glm::vec3 center(a + 0.9 * glm::linearRand(0.0f, 1.0f),
-                             -kBallRadius,
+                             kBallRadius - 0.5,
                              b + 0.9 * glm::linearRand(0.0f, 1.0f));
 
             glm::vec3 randColor = glm::linearRand(glm::vec3(0, 0, 0), glm::vec3(1, 1, 1));
-            
             float random = glm::linearRand(0.0f, 1.0f);
             if (random < 0.8) {
                 scene.addSphere(center, kBallRadius, std::make_shared<Lambertian>(randColor));

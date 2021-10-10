@@ -44,11 +44,13 @@ int main(int argc, char *argv[]) {
     const float imageAspectRatio = FLAGS_width / FLAGS_height;
     const float cameraCCDheight = 2.0; // nice to have ccd have size [-1, 1] by default
     const float cameraCCDwidth = cameraCCDheight * imageAspectRatio;
+    const float focal = 1.0;
+    const float aperture = 0.0;
     
-    const glm::vec3 lookFrom = glm::vec3(0, 0, 3);
+    const glm::vec3 lookFrom = glm::vec3(0, 0, 0);
     const glm::vec3 lookAt = glm::vec3(0, 0, -1);
     
-    Camera camera(lookFrom, glm::vec2(cameraCCDwidth, cameraCCDheight), lookAt, 1.0);
+    Camera camera(lookFrom, glm::vec2(cameraCCDwidth, cameraCCDheight), lookAt, focal, aperture);
     Scene scene = generateScene();
     
     for (int row = 0; row < FLAGS_height; row++) {
