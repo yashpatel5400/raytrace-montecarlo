@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
     const float cameraCCDheight = 2.0; // nice to have ccd have size [-1, 1] by default
     const float cameraCCDwidth = cameraCCDheight * imageAspectRatio;
     
-    Camera camera(glm::vec3(0, 0, 0), glm::vec2(cameraCCDwidth, cameraCCDheight), 1.0);
+    Camera camera(glm::vec3(1, 1, 1), glm::vec2(cameraCCDwidth, cameraCCDheight), 1.0);
     
     Scene scene;
     scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 0.6, std::make_shared<Lambertian>(PEACH));
