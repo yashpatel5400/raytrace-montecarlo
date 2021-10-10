@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3E43139F27132A48006B3C1E /* material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E43139D27132A48006B3C1E /* material.cpp */; };
+		3E4313A227132B2E006B3C1E /* scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E4313A027132B2E006B3C1E /* scene.cpp */; };
 		3E4465C22711D6D200215737 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E4465C12711D6D200215737 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +25,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3E43139D27132A48006B3C1E /* material.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = material.cpp; sourceTree = "<group>"; };
+		3E43139E27132A48006B3C1E /* material.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = material.hpp; sourceTree = "<group>"; };
+		3E4313A027132B2E006B3C1E /* scene.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = scene.cpp; sourceTree = "<group>"; };
+		3E4313A127132B2E006B3C1E /* scene.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = scene.hpp; sourceTree = "<group>"; };
+		3E4313A427132B3E006B3C1E /* camera.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = camera.hpp; sourceTree = "<group>"; };
+		3E4313A627132BC2006B3C1E /* util.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = util.hpp; sourceTree = "<group>"; };
 		3E4465BE2711D6D200215737 /* raytrace */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = raytrace; sourceTree = BUILT_PRODUCTS_DIR; };
 		3E4465C12711D6D200215737 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -58,6 +66,12 @@
 			isa = PBXGroup;
 			children = (
 				3E4465C12711D6D200215737 /* main.cpp */,
+				3E43139D27132A48006B3C1E /* material.cpp */,
+				3E43139E27132A48006B3C1E /* material.hpp */,
+				3E4313A027132B2E006B3C1E /* scene.cpp */,
+				3E4313A127132B2E006B3C1E /* scene.hpp */,
+				3E4313A427132B3E006B3C1E /* camera.hpp */,
+				3E4313A627132BC2006B3C1E /* util.hpp */,
 			);
 			path = raytrace;
 			sourceTree = "<group>";
@@ -118,6 +132,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3E43139F27132A48006B3C1E /* material.cpp in Sources */,
+				3E4313A227132B2E006B3C1E /* scene.cpp in Sources */,
 				3E4465C22711D6D200215737 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
