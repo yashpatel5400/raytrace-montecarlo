@@ -16,6 +16,7 @@
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/random.hpp>
 
 DEFINE_string(filename, "", "Output file for rendering");
 DEFINE_int32(width, 0, "Width of rendering");
@@ -62,9 +63,9 @@ struct Ray {
 glm::vec3 sampleUnitSphere() {
     while (true) {
         glm::vec3 proposal(
-                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
-                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5),
-                           2.0 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX) - 0.5)
+                           2.0 * (glm::linearRand(0.0f, 0.5f) - 0.5),
+                           2.0 * (glm::linearRand(0.0f, 0.5f) - 0.5),
+                           2.0 * (glm::linearRand(0.0f, 0.5f) - 0.5)
                            );
         if (glm::length(proposal) <= 1.0) {
             return proposal;
@@ -150,7 +151,7 @@ struct Dielectric : public Material {
         float r0 = (1 - eta) / (1 + eta);
         float r02 = r0 * r0;
         float rTheta = r02 + (1 - r02) * pow((1 - cosTheta), 5.0);
-        float random = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        float random = glm::linearRand(0.0f, 0.5f);
         
         glm::vec3 outDirection = sinTheta * eta > 1.0 || random < rTheta
             ? glm::reflect(in.direction, normal)
@@ -162,9 +163,11 @@ struct Dielectric : public Material {
 };
 
 struct Sphere {
-    const glm::vec3 center;
+    glm::vec3 center;
     float radius;
-    const std::shared_ptr<Material> material;
+    std::shared_ptr<Material> material;
+    
+    Sphere() : radius(0), center(glm::vec3(0, 0, 0)) {}
     
     Sphere(const glm::vec3& center,
            float radius,
@@ -176,14 +179,24 @@ struct Camera {
     glm::vec2 ccd; // this is the imagined CCD size for the camera (in metric units: cm)
     float focal;
     
+    glm::vec3 up;
+    glm::vec3 forward;
+    glm::vec3 right;
+    
     Camera(const glm::vec3& position,
            const glm::vec2& ccd,
-           float focal) : position(position), ccd(ccd), focal(focal) {}
+           const glm::vec3& focusPosition,
+           float focal) : position(position), ccd(ccd), focal(focal) {
+        // axis align the camera by default -- these are modified if we do lookAt
+        forward = glm::normalize(focusPosition - position);
+        right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
+        up = glm::normalize(glm::cross(right, forward));
+    }
     
     // produces the ray from the camera center through a particular normalized pixel coordinate
     Ray generateRay(const glm::vec2& uv) {
         glm::vec2 ccdPosition(uv.x * ccd.x - ccd.x / 2, uv.y * ccd.y - ccd.y / 2);
-        glm::vec3 ray = glm::vec3(ccdPosition.x, -ccdPosition.y, -focal) - position;
+        glm::vec3 ray = ccdPosition.x * right + -ccdPosition.y * up + focal * forward;
         glm::vec3 direction = glm::normalize(ray);
         return Ray(direction, position);
     }
@@ -198,12 +211,9 @@ struct Scene {
 };
 
 void writeColor(std::ofstream &out, glm::vec3& color) {
-    // Write the translated [0,255] value of each color component.
-    float gammaCorrection = 1.0f / FLAGS_samples;
-    
-    out << static_cast<int>(255 * sqrt(color.x * gammaCorrection)) << ' '
-        << static_cast<int>(255 * sqrt(color.y * gammaCorrection)) << ' '
-        << static_cast<int>(255 * sqrt(color.z * gammaCorrection)) << '\n';
+    out << static_cast<int>(255 * sqrt(color.x / FLAGS_samples)) << ' '
+        << static_cast<int>(255 * sqrt(color.y / FLAGS_samples)) << ' '
+        << static_cast<int>(255 * sqrt(color.z / FLAGS_samples)) << '\n';
 }
 
 // borrowed from https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection
@@ -235,30 +245,69 @@ glm::vec3 findIntersection(const Scene& scene, const Ray& ray, const Camera& cam
         return BLACK;
     }
     
+    Sphere closestObject;
+    float closestIntersection = std::numeric_limits<float>::max();
     for (const Sphere& sphere : scene.spheres) {
         float intersection = intersectSphere(sphere, ray);
-        if (intersection > 0) {
-            glm::vec3 intersectionPoint = ray.direction * intersection;
-            glm::vec3 normal = glm::normalize(intersectionPoint - sphere.center);
-            bool inside = glm::dot(ray.direction, normal) > 0;
-
-            Ray scatteredRay;
-            color scatteredColor;
-            bool didScatter = sphere.material->scatter(ray,
-                                                       intersectionPoint,
-                                                       normal,
-                                                       inside,
-                                                       scatteredRay,
-                                                       scatteredColor);
-            if (!didScatter) {
-                return BLACK;
-            }
-            return scatteredColor * findIntersection(scene, scatteredRay, camera, bounce + 1);
+        if (intersection > 0 && intersection < closestIntersection) {
+            closestIntersection = intersection;
+            closestObject = sphere;
         }
+    }
+    
+    if (closestIntersection < std::numeric_limits<float>::max()) {
+        glm::vec3 intersectionPoint = ray.direction * closestIntersection;
+        glm::vec3 normal = glm::normalize(intersectionPoint - closestObject.center);
+        bool inside = glm::dot(ray.direction, normal) > 0;
+
+        Ray scatteredRay;
+        color scatteredColor;
+        bool didScatter = closestObject.material->scatter(ray,
+                                                   intersectionPoint,
+                                                   normal,
+                                                   inside,
+                                                   scatteredRay,
+                                                   scatteredColor);
+        if (!didScatter) {
+            return BLACK;
+        }
+        return scatteredColor * findIntersection(scene, scatteredRay, camera, bounce + 1);
     }
     
     float t = 0.5 * (ray.direction.y + 1.0);
     return glm::vec3(1.0, 1.0, 1.0) * (1.0f - t) + glm::vec3(0.5, 0.7, 1.0) * t;
+}
+
+Scene generateScene() {
+    Scene world;
+
+    std::shared_ptr<Material> ground = std::make_shared<Lambertian>(color(0.5, 0.5, 0.5));
+    world.addSphere(glm::vec3(0, -1000, 0), 1000, ground);
+    world.addSphere(glm::vec3(0, 1, 0), 1.0, std::make_shared<Dielectric>(1.5));
+    world.addSphere(glm::vec3(-4, 1, 0), 1.0, std::make_shared<Lambertian>(color(0.4, 0.2, 0.1)));
+    world.addSphere(glm::vec3(4, 1, 0), 1.0, std::make_shared<Metal>(color(0.7, 0.6, 0.5), 0.0));
+
+    for (int a = -2; a < 2; a++) {
+        for (int b = -2; b < 2; b++) {
+            float random = glm::linearRand(0.0f, 0.5f);
+            glm::vec3 center(a + 0.9 * glm::linearRand(0.0f, 0.5f),
+                             0.2,
+                             b + 0.9 * glm::linearRand(0.0f, 0.5f));
+
+            if ((center - glm::vec3(4, 0.2, 0)).length() > 0.9) {
+                glm::vec3 randColor = glm::linearRand(glm::vec3(0, 0, 0), glm::vec3(1, 1, 1));
+                if (random < 0.8) {
+                    world.addSphere(center, 0.2, std::make_shared<Lambertian>(randColor));
+                } else if (random < 0.95) {
+                    world.addSphere(center, 0.2, std::make_shared<Metal>(randColor, glm::linearRand(0.0f, 0.5f)));
+                } else {
+                    world.addSphere(center, 0.2, std::make_shared<Dielectric>(1.5));
+                }
+            }
+        }
+    }
+
+    return world;
 }
 
 /**
@@ -278,13 +327,11 @@ int main(int argc, char *argv[]) {
     const float cameraCCDheight = 2.0; // nice to have ccd have size [-1, 1] by default
     const float cameraCCDwidth = cameraCCDheight * imageAspectRatio;
     
-    Camera camera(glm::vec3(1, 1, 1), glm::vec2(cameraCCDwidth, cameraCCDheight), 1.0);
+    const glm::vec3 lookFrom = glm::vec3(13, 2, 3);
+    const glm::vec3 lookAt = glm::vec3(0, 0, 0);
     
-    Scene scene;
-    scene.addSphere(glm::vec3(0.0, 0.0, -2.0), 0.6, std::make_shared<Lambertian>(PEACH));
-    scene.addSphere(glm::vec3(-1.2, 0.0, -2.0),0.5, std::make_shared<Metal>(LIGHT_GRAY, 0.1));
-    scene.addSphere(glm::vec3(1.4, 0.0, -2.0), 0.7, std::make_shared<Dielectric>(1.5));
-    scene.addSphere(glm::vec3(0.0, -101.0, -2.0), 100.0, std::make_shared<Lambertian>(GREEN));
+    Camera camera(lookFrom, glm::vec2(cameraCCDwidth, cameraCCDheight), lookAt, 10.0);
+    Scene scene = generateScene();
     
     for (int row = 0; row < FLAGS_height; row++) {
         for (int col = 0; col < FLAGS_width; col++) {
@@ -292,12 +339,11 @@ int main(int argc, char *argv[]) {
             for (int sample = 0; sample < FLAGS_samples; sample++) {
                 // TODO: here is one spot where sampling can be done more intelligently! just uniform right now
                 glm::vec2 uv(
-                             ((float)col + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) / FLAGS_width,
-                             ((float)row + static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) / FLAGS_height);
+                             ((float)col + glm::linearRand(0.0f, 0.5f)) / FLAGS_width,
+                             ((float)row + glm::linearRand(0.0f, 0.5f)) / FLAGS_height);
                 Ray ray = camera.generateRay(uv); // implicit origin of rays is the camera position
                 color += findIntersection(scene, ray, camera, 0);
             }
-            color /= FLAGS_samples;
             writeColor(result, color);
         }
     }
