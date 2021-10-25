@@ -37,6 +37,6 @@ struct Scene {
 
 Scene generateScene();
 
-Color castRay(const Scene& scene, const Color& background, const Ray& ray, int bounce);
+Color castRay(const Scene& scene, const Ray& ray, int bounce);
 
 #endif /* scene_hpp */

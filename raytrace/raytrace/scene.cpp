@@ -65,7 +65,7 @@ float intersectSphere(const Sphere& sphere, const Ray& ray) {
  * where all the interesting Monte Carlo sampling will be happening!
  *
  */
-Color castRay(const Scene& scene, const Color& background, const Ray& ray, int bounce) {
+Color castRay(const Scene& scene, const Ray& ray, int bounce) {
 //    std::cout << bounce << std::endl;
     if (bounce < 0) {
         return BLACK;
