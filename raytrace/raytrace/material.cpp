@@ -89,3 +89,18 @@ const bool Dielectric::scatter(const Ray& in,
     outColor = WHITE;
     return true;
 }
+
+Light::Light(const Color& texture) : texture(texture) {}
+
+const bool Light::scatter(const Ray& in,
+                   const glm::vec3& intersection,
+                   const glm::vec3& normal,
+                   const bool inside,
+                   Ray& out,
+                   Color& outColor) const {
+    return false; // light sources do not have scattering effects
+}
+
+Color Light::emit(const glm::vec3& intersection) const {
+    return Color(0, 0, 0);
+}

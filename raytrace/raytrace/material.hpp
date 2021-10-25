@@ -40,6 +40,10 @@ struct Material {
                                const bool inside,
                                Ray& out,
                                Color& outColor) const = 0;
+    
+    virtual Color emit(const glm::vec3& intersection) const {
+        return Color(0, 0, 0);
+    }
 };
 
 struct Lambertian : public Material {
@@ -80,6 +84,21 @@ struct Dielectric : public Material {
                        Color& outColor) const override;
 
     float ior;
+};
+
+struct Light : public Material {
+    Light(const Color& texture);
+    
+    const bool scatter(const Ray& in,
+                       const glm::vec3& intersection,
+                       const glm::vec3& normal,
+                       const bool inside,
+                       Ray& out,
+                       Color& outColor) const override;
+    
+    Color emit(const glm::vec3& intersection) const override;
+
+    Color texture;
 };
 
 #endif /* material_hpp */
