@@ -51,7 +51,8 @@ struct Scene {
     }
 };
 
-Scene generateScene();
+Scene generateBallScene();
+Scene generateCornellBoxScene();
 
 Color castRay(const Scene& scene, const Ray& ray, int bounce);
 

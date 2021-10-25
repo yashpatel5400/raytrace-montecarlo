@@ -12,7 +12,7 @@
 
 #include <glm/gtc/random.hpp>
 
-Scene generateScene() {
+Scene generateBallScene() {
     Scene scene;
     
     scene.addSphere(glm::vec3(0.0, 0.0, -3.5), 0.5, std::make_shared<Lambertian>(PEACH));
@@ -43,6 +43,19 @@ Scene generateScene() {
     }
     
     scene.backgroundColor = BLACK;
+    
+    return scene;
+}
+
+Scene generateCornellBoxScene() {
+    Scene scene;
+    
+    scene.addYZPlane(0, 555, 0, 555, 555, std::make_shared<Lambertian>(GREEN));
+    scene.addYZPlane(0, 555, 0, 555, 0, std::make_shared<Lambertian>(RED));
+    scene.addXZPlane(213, 343, 227, 332, 554, std::make_shared<Light>(GRAY));
+    scene.addXZPlane(0, 555, 0, 555, 0, std::make_shared<Lambertian>(WHITE));
+    scene.addXZPlane(0, 555, 0, 555, 555, std::make_shared<Lambertian>(WHITE));
+    scene.addXYPlane(0, 555, 0, 555, 555, std::make_shared<Lambertian>(WHITE));
     
     return scene;
 }
