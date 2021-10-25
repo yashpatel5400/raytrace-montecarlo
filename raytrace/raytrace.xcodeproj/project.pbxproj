@@ -10,6 +10,7 @@
 		3E43139F27132A48006B3C1E /* material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E43139D27132A48006B3C1E /* material.cpp */; };
 		3E4313A227132B2E006B3C1E /* scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E4313A027132B2E006B3C1E /* scene.cpp */; };
 		3E4465C22711D6D200215737 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3E4465C12711D6D200215737 /* main.cpp */; };
+		3ED340072727626E008EF195 /* geometry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3ED340052727626E008EF195 /* geometry.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -33,6 +34,8 @@
 		3E4313A627132BC2006B3C1E /* util.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = util.hpp; sourceTree = "<group>"; };
 		3E4465BE2711D6D200215737 /* raytrace */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = raytrace; sourceTree = BUILT_PRODUCTS_DIR; };
 		3E4465C12711D6D200215737 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		3ED340052727626E008EF195 /* geometry.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = geometry.cpp; sourceTree = "<group>"; };
+		3ED340062727626E008EF195 /* geometry.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = geometry.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +75,8 @@
 				3E4313A127132B2E006B3C1E /* scene.hpp */,
 				3E4313A427132B3E006B3C1E /* camera.hpp */,
 				3E4313A627132BC2006B3C1E /* util.hpp */,
+				3ED340052727626E008EF195 /* geometry.cpp */,
+				3ED340062727626E008EF195 /* geometry.hpp */,
 			);
 			path = raytrace;
 			sourceTree = "<group>";
@@ -133,6 +138,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3E43139F27132A48006B3C1E /* material.cpp in Sources */,
+				3ED340072727626E008EF195 /* geometry.cpp in Sources */,
 				3E4313A227132B2E006B3C1E /* scene.cpp in Sources */,
 				3E4465C22711D6D200215737 /* main.cpp in Sources */,
 			);
