@@ -42,6 +42,8 @@ Scene generateScene() {
         }
     }
     
+    scene.backgroundColor = BLACK;
+    
     return scene;
 }
 
@@ -63,7 +65,7 @@ float intersectSphere(const Sphere& sphere, const Ray& ray) {
  * where all the interesting Monte Carlo sampling will be happening!
  *
  */
-Color findIntersection(const Scene& scene, const Ray& ray, int bounce) {
+Color castRay(const Scene& scene, const Color& background, const Ray& ray, int bounce) {
 //    std::cout << bounce << std::endl;
     if (bounce < 0) {
         return BLACK;
@@ -86,6 +88,8 @@ Color findIntersection(const Scene& scene, const Ray& ray, int bounce) {
 
         Ray scatteredRay;
         Color scatteredColor;
+        Color emissionColor = closestObject.material->emit(intersectionPoint);
+        
         bool didScatter = closestObject.material->scatter(ray,
                                                    intersectionPoint,
                                                    normal,
@@ -93,11 +97,10 @@ Color findIntersection(const Scene& scene, const Ray& ray, int bounce) {
                                                    scatteredRay,
                                                    scatteredColor);
         if (!didScatter) {
-            return BLACK;
+            return emissionColor;
         }
-        return scatteredColor * findIntersection(scene, scatteredRay, bounce - 1);
+        return emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1);
     }
     
-    float t = 0.5 * (ray.direction.y + 1.0);
-    return glm::vec3(1.0, 1.0, 1.0) * (1.0f - t) + glm::vec3(0.5, 0.7, 1.0) * t;
+    return scene.backgroundColor;
 }

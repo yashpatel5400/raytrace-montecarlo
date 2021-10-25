@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
                              ((float)col + glm::linearRand(0.0f, 1.0f)) / FLAGS_width,
                              ((float)row + glm::linearRand(0.0f, 1.0f)) / FLAGS_height);
                 Ray ray = camera.generateRay(uv); // implicit origin of rays is the camera position
-                color += findIntersection(scene, ray, FLAGS_bounces);
+                color += castRay(scene, ray, FLAGS_bounces);
             }
             writeColor(result, color);
         }

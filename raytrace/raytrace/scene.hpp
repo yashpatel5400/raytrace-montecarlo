@@ -28,6 +28,7 @@ struct Sphere {
 
 struct Scene {
     std::vector<Sphere> spheres;
+    Color backgroundColor;
     
     void addSphere(const glm::vec3& center, float radius, const std::shared_ptr<Material> material) {
         spheres.push_back(Sphere(center, radius, material));
@@ -36,6 +37,6 @@ struct Scene {
 
 Scene generateScene();
 
-Color findIntersection(const Scene& scene, const Ray& ray, int bounce);
+Color castRay(const Scene& scene, const Color& background, const Ray& ray, int bounce);
 
 #endif /* scene_hpp */
