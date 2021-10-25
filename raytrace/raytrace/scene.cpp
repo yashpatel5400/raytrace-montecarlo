@@ -12,6 +12,44 @@
 
 #include <glm/gtc/random.hpp>
 
+// borrowed from https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection
+float Sphere::intersect(const Ray& ray) {
+    glm::vec3 sphereToOrigin = ray.origin - center;
+    float a = glm::dot(ray.direction, ray.direction);
+    float b = 2.0 * glm::dot(sphereToOrigin, ray.direction);
+    float c = glm::dot(sphereToOrigin, sphereToOrigin) - radius * radius;
+    float discriminant = b * b - 4 * a * c;
+    if (discriminant < 0) {
+       return -1.0;
+    }
+    return (-b - sqrt(discriminant)) / (2.0 * a);
+}
+
+float AxisAlignedPlane::intersect(const Ray& ray) {
+    float t = (z - ray.direction.z) / ray.direction.z; // how long along the trajectory until intersecting plane
+    if (t < 0) {
+        return -1.0;
+    }
+    glm::vec3 intersection = ray.origin + t * ray.direction; // follow ray out to intersect
+    float x = intersection.x;
+    float y = intersection.y;
+
+    if (!(x1 <= x && x <= x2 &&
+          y1 <= y && y <= y2)) {
+        return -1.0;
+    }
+    
+    return t;
+}
+
+glm::vec3 Sphere::normal(const glm::vec3& intersectionPoint) {
+    return glm::normalize(intersectionPoint - center);
+}
+
+glm::vec3 AxisAlignedPlane::normal(const glm::vec3& intersectionPoint) {
+    return glm::vec3(0, 0, 1); // currently assume this is aligned to the XY plane
+}
+
 Scene generateScene() {
     Scene scene;
     
@@ -47,39 +85,6 @@ Scene generateScene() {
     return scene;
 }
 
-// borrowed from https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection
-float intersectSphere(const Sphere& sphere, const Ray& ray) {
-    glm::vec3 sphereToOrigin = ray.origin - sphere.center;
-    float a = glm::dot(ray.direction, ray.direction);
-    float b = 2.0 * glm::dot(sphereToOrigin, ray.direction);
-    float c = glm::dot(sphereToOrigin, sphereToOrigin) - sphere.radius * sphere.radius;
-    float discriminant = b * b - 4 * a * c;
-    if (discriminant < 0) {
-       return -1.0;
-    }
-    return (-b - sqrt(discriminant)) / (2.0 * a);
-}
-
-float intersectAxisAlignedPlane(AxisAlignedPlane plane, const Ray& ray) {
-    float t = (plane.z - ray.direction.z) / ray.direction.z; // how long along the trajectory until intersecting plane
-    if (t < 0) {
-        return -1.0;
-    }
-    glm::vec3 intersection = ray.origin + t * ray.direction; // follow ray out to intersect
-    float x = intersection.x;
-    float y = intersection.y;
-
-    if (!(plane.x1 <= x && x <= plane.x2 &&
-          plane.y1 <= y && y <= plane.y2)) {
-        return -1.0;
-    }
-    
-    // may have later use if materials are implemented
-//    float u = (x - plane.x1) / (plane.x2 - plane.x1);
-//    float v = (y - plane.y1) / (plane.y2 - plane.y1);
-    return t;
-}
-
 /**
  * returns color for the intersection of the ray with the scene. note that THIS is
  * where all the interesting Monte Carlo sampling will be happening!
@@ -91,26 +96,26 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
         return BLACK;
     }
     
-    Sphere closestObject;
+    std::shared_ptr<Geometry> closestObject;
     float closestIntersection = std::numeric_limits<float>::max();
-    for (const Sphere& sphere : scene.spheres) {
-        float intersection = intersectSphere(sphere, ray);
+    for (const std::shared_ptr<Geometry>& geometry : scene.geometry) {
+        float intersection = geometry->intersect(ray);
         if (intersection > 0 && intersection < closestIntersection) {
             closestIntersection = intersection;
-            closestObject = sphere;
+            closestObject = geometry;
         }
     }
     
     if (closestIntersection < std::numeric_limits<float>::max()) {
         glm::vec3 intersectionPoint = ray.direction * closestIntersection;
-        glm::vec3 normal = glm::normalize(intersectionPoint - closestObject.center);
+        glm::vec3 normal = closestObject->normal(intersectionPoint);
         bool inside = glm::dot(ray.direction, normal) > 0;
 
         Ray scatteredRay;
         Color scatteredColor;
-        Color emissionColor = closestObject.material->emit(intersectionPoint);
+        Color emissionColor = closestObject->material->emit(intersectionPoint);
         
-        bool didScatter = closestObject.material->scatter(ray,
+        bool didScatter = closestObject->material->scatter(ray,
                                                    intersectionPoint,
                                                    normal,
                                                    inside,
