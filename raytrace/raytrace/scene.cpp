@@ -26,16 +26,14 @@ float Sphere::intersect(const Ray& ray) {
 }
 
 float AxisAlignedPlane::intersect(const Ray& ray) {
-    float t = (z - ray.direction.z) / ray.direction.z; // how long along the trajectory until intersecting plane
+    float t = (constAxis - ray.direction[constAxisIndex]) / ray.direction[constAxisIndex]; // how long along the trajectory until intersecting plane
     if (t < 0) {
         return -1.0;
     }
+    
     glm::vec3 intersection = ray.origin + t * ray.direction; // follow ray out to intersect
-    float x = intersection.x;
-    float y = intersection.y;
-
-    if (!(x1 <= x && x <= x2 &&
-          y1 <= y && y <= y2)) {
+    if (!(varAxis11 <= intersection[varAxis1Index] && intersection[varAxis1Index] <= varAxis12 &&
+          varAxis21 <= intersection[varAxis2Index] && intersection[varAxis2Index] <= varAxis22)) {
         return -1.0;
     }
     
@@ -47,7 +45,9 @@ glm::vec3 Sphere::normal(const glm::vec3& intersectionPoint) {
 }
 
 glm::vec3 AxisAlignedPlane::normal(const glm::vec3& intersectionPoint) {
-    return glm::vec3(0, 0, 1); // currently assume this is aligned to the XY plane
+    glm::vec3 normalVector(0, 0, 0);
+    normalVector[constAxisIndex] = 1;
+    return normalVector;
 }
 
 Scene generateScene() {

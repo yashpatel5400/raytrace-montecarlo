@@ -39,19 +39,61 @@ struct Sphere : public Geometry {
 };
 
 struct AxisAlignedPlane : public Geometry {
-    float x1, y1, x2, y2, z; // coordinates (currently assuming axis aligned)
+    float varAxis11, varAxis21, varAxis12, varAxis22;
+    float constAxis;
+    int varAxis1Index, varAxis2Index, constAxisIndex;
     
-    AxisAlignedPlane() : x1(0), y1(0), x2(0), y2(0), z(0) {}
+    AxisAlignedPlane() : varAxis11(0), varAxis21(0), varAxis12(0), varAxis22(0), constAxis(0),
+                         varAxis1Index(0), varAxis2Index(0), constAxisIndex(0) {}
     
-    AxisAlignedPlane(const float x1,
-                     const float y1,
-                     const float x2,
-                     const float y2,
-                     const float z,
-                     std::shared_ptr<Material> material) : x1(x1), y1(y1), x2(x2), y2(y2), z(z), Geometry(material) {}
+    AxisAlignedPlane(const float varAxis11,
+                     const float varAxis21,
+                     const float varAxis12,
+                     const float varAxis22,
+                     const float constAxis,
+                     const int varAxis1Index,
+                     const int varAxis2Index,
+                     const int constAxisIndex,
+                     std::shared_ptr<Material> material) :
+                        varAxis11(varAxis11),
+                        varAxis21(varAxis21),
+                        varAxis12(varAxis12),
+                        varAxis22(varAxis22),
+                        constAxis(constAxis),
+                        varAxis1Index(varAxis1Index),
+                        varAxis2Index(varAxis2Index),
+                        constAxisIndex(constAxisIndex),
+                        Geometry(material) {}
     
     float intersect(const Ray& ray) override;
     glm::vec3 normal(const glm::vec3& intersectionPoint) override;
+};
+
+struct XYPlane : public AxisAlignedPlane {
+    XYPlane(const float x1,
+            const float y1,
+            const float x2,
+            const float y2,
+            const float z,
+            std::shared_ptr<Material> material) : AxisAlignedPlane(x1, y1, x2, y2, z, 0, 1, 2, material) {}
+};
+
+struct XZPlane : public AxisAlignedPlane {
+    XZPlane(const float x1,
+            const float z1,
+            const float x2,
+            const float z2,
+            const float y,
+            std::shared_ptr<Material> material) : AxisAlignedPlane(x1, z1, x2, z2, y, 0, 2, 1, material) {}
+};
+
+struct YZPlane : public AxisAlignedPlane {
+    YZPlane(const float y1,
+            const float z1,
+            const float y2,
+            const float z2,
+            const float x,
+            std::shared_ptr<Material> material) : AxisAlignedPlane(y1, z1, y2, z2, x, 1, 2, 0, material) {}
 };
 
 struct Scene {
@@ -62,13 +104,31 @@ struct Scene {
         geometry.push_back(std::make_shared<Sphere>(center, radius, material));
     }
     
-    void addAxisAlignedPlane(const float x1,
-                             const float y1,
-                             const float x2,
-                             const float y2,
-                             const float z,
-                             std::shared_ptr<Material> material) {
-        geometry.push_back(std::make_shared<AxisAlignedPlane>(x1, y1, x2, y2, z, material));
+    void addXYPlane(const float x1,
+                    const float y1,
+                    const float x2,
+                    const float y2,
+                    const float z,
+                    std::shared_ptr<Material> material) {
+        geometry.push_back(std::make_shared<XYPlane>(x1, y1, x2, y2, z, material));
+    }
+    
+    void addXZPlane(const float x1,
+                    const float z1,
+                    const float x2,
+                    const float z2,
+                    const float y,
+                    std::shared_ptr<Material> material) {
+        geometry.push_back(std::make_shared<XYPlane>(x1, z1, x2, z2, y, material));
+    }
+    
+    void addYZPlane(const float y1,
+                    const float z1,
+                    const float y2,
+                    const float z2,
+                    const float x,
+                    std::shared_ptr<Material> material)  {
+        geometry.push_back(std::make_shared<XYPlane>(y1, z1, y2, z2, x, material));
     }
 };
 
