@@ -60,6 +60,26 @@ float intersectSphere(const Sphere& sphere, const Ray& ray) {
     return (-b - sqrt(discriminant)) / (2.0 * a);
 }
 
+float intersectAxisAlignedPlane(AxisAlignedPlane plane, const Ray& ray) {
+    float t = (plane.z - ray.direction.z) / ray.direction.z; // how long along the trajectory until intersecting plane
+    if (t < 0) {
+        return -1.0;
+    }
+    glm::vec3 intersection = ray.origin + t * ray.direction; // follow ray out to intersect
+    float x = intersection.x;
+    float y = intersection.y;
+
+    if (!(plane.x1 <= x && x <= plane.x2 &&
+          plane.y1 <= y && y <= plane.y2)) {
+        return -1.0;
+    }
+    
+    // may have later use if materials are implemented
+//    float u = (x - plane.x1) / (plane.x2 - plane.x1);
+//    float v = (y - plane.y1) / (plane.y2 - plane.y1);
+    return t;
+}
+
 /**
  * returns color for the intersection of the ray with the scene. note that THIS is
  * where all the interesting Monte Carlo sampling will be happening!
