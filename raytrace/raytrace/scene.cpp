@@ -58,20 +58,22 @@ Scene generateCornellBoxScene() {
     const int sizeY = 500;
     const int sizeZ = 250;
 
-    scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, true, std::make_shared<Lambertian>(WHITE)); // back
-    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, true, std::make_shared<Lambertian>(GREEN)); // left
-    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, sizeX, false, std::make_shared<Lambertian>(RED)); // right
-    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, true, std::make_shared<Lambertian>(WHITE)); // bottom
-    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, true, std::make_shared<Lambertian>(WHITE)); // top
+    scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, true, 0.0, std::make_shared<Lambertian>(WHITE)); // back
+    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, true, 0.0, std::make_shared<Lambertian>(GREEN)); // left
+    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, sizeX, false, 0.0, std::make_shared<Lambertian>(RED)); // right
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, true, 0.0, std::make_shared<Lambertian>(WHITE)); // bottom
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, true, 0.0, std::make_shared<Lambertian>(WHITE)); // top
     
     scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
-                     sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
+                     sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
     scene.addBox(glm::vec3(-150.0 + -sizeX / 3.0, -sizeY + 0.01, -50.0 + centerZ - sizeZ / 3.0),
                  glm::vec3(-150.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, -50.0 + centerZ + sizeZ / 3.0),
+                 0.1,
                  std::make_shared<Lambertian>(WHITE));
     scene.addBox(glm::vec3(250.0 + -sizeX / 4.0, -sizeY + 0.01, 250.0 + centerZ - sizeZ / 4.0),
                  glm::vec3(250.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 250.0 + centerZ + sizeZ / 4.0),
+                 -0.3,
                  std::make_shared<Lambertian>(WHITE));
     
     scene.backgroundColor = BLACK;
@@ -92,8 +94,9 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
     
     std::shared_ptr<Geometry> closestObject;
     float closestIntersection = std::numeric_limits<float>::max();
+    glm::vec3 intersectionPoint;
     for (const std::shared_ptr<Geometry>& geometry : scene.geometry) {
-        float intersection = geometry->intersect(ray);
+        float intersection = geometry->intersect(ray, intersectionPoint);
         if (intersection > 0 && intersection < closestIntersection) {
             closestIntersection = intersection;
             closestObject = geometry;
@@ -101,7 +104,6 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
     }
     
     if (closestIntersection < std::numeric_limits<float>::max()) {
-        glm::vec3 intersectionPoint = ray.direction * closestIntersection;
         glm::vec3 normal = closestObject->normal(intersectionPoint);
         bool inside = glm::dot(ray.direction, normal) > 0;
 

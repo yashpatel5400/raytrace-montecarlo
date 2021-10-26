@@ -29,8 +29,9 @@ struct Scene {
                     const float y2,
                     const float z,
                     const bool facingAxis,
+                    const float yAxisRotation,
                     std::shared_ptr<Material> material) {
-        geometry.push_back(std::make_shared<XYPlane>(x1, y1, x2, y2, z, facingAxis, material));
+        geometry.push_back(std::make_shared<XYPlane>(x1, y1, x2, y2, z, facingAxis, yAxisRotation, material));
     }
     
     void addXZPlane(const float x1,
@@ -39,8 +40,9 @@ struct Scene {
                     const float z2,
                     const float y,
                     const bool facingAxis,
+                    const float yAxisRotation,
                     std::shared_ptr<Material> material) {
-        geometry.push_back(std::make_shared<XZPlane>(x1, z1, x2, z2, y, facingAxis, material));
+        geometry.push_back(std::make_shared<XZPlane>(x1, z1, x2, z2, y, facingAxis, yAxisRotation, material));
     }
     
     void addYZPlane(const float y1,
@@ -49,14 +51,16 @@ struct Scene {
                     const float z2,
                     const float x,
                     const bool facingAxis,
+                    const float yAxisRotation,
                     std::shared_ptr<Material> material)  {
-        geometry.push_back(std::make_shared<YZPlane>(y1, z1, y2, z2, x, facingAxis, material));
+        geometry.push_back(std::make_shared<YZPlane>(y1, z1, y2, z2, x, facingAxis, yAxisRotation, material));
     }
     
     void addBox(const glm::vec3& minCorner,
                 const glm::vec3& maxCorner,
+                const float yAxisRotation,
                 std::shared_ptr<Material> material)  {
-        geometry.push_back(std::make_shared<Box>(minCorner, maxCorner, material));
+        geometry.push_back(std::make_shared<Box>(minCorner, maxCorner, yAxisRotation, material));
     }
 };
 
