@@ -52,21 +52,22 @@ Scene generateBallScene() {
 Scene generateCornellBoxScene() {
     Scene scene;
     
-    const int centerZ = -2;
+    const int centerZ = -107;
     
-    const int sizeX = 1;
-    const int sizeY = 1;
-    const int sizeZ = 1;
+    const int sizeX = 50;
+    const int sizeY = 50;
+    const int sizeZ = 50;
 
     scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, std::make_shared<Lambertian>(WHITE)); // back
     scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, std::make_shared<Lambertian>(GREEN)); // left
     scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, sizeX, std::make_shared<Lambertian>(RED)); // right
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, std::make_shared<Lambertian>(WHITE)); // bottom
-    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, std::make_shared<Lambertian>(WHITE)); // bottom
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, std::make_shared<Lambertian>(WHITE)); // top
     
-//    scene.addXZPlane(213, 227, 343, 332, 554, std::make_shared<Light>(GRAY));
+    scene.addXZPlane(-sizeX / 4.0f, centerZ - sizeZ / 4.0f,
+                     sizeX / 4.0f, centerZ + sizeZ / 4.0f, sizeY - 0.025, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
-    scene.backgroundColor = GRAY;
+    scene.backgroundColor = BLACK;
     
     return scene;
 }
@@ -111,7 +112,7 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
         if (!didScatter) {
             return emissionColor;
         }
-        return scatteredColor; // emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1);
+        return emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1);
     }
     
     return scene.backgroundColor;

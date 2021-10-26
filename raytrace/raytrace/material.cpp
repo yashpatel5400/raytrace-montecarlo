@@ -102,5 +102,5 @@ const bool Light::scatter(const Ray& in,
 }
 
 Color Light::emit(const glm::vec3& intersection) const {
-    return Color(0, 0, 0);
+    return texture;
 }
