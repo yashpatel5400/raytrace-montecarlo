@@ -10,6 +10,8 @@
 
 #include "material.hpp"
 
+#include <iostream>
+
 #include <glm/gtc/random.hpp>
 
 Scene generateBallScene() {
@@ -50,12 +52,21 @@ Scene generateBallScene() {
 Scene generateCornellBoxScene() {
     Scene scene;
     
-    scene.addYZPlane(0, 555, 0, 555, 555, std::make_shared<Lambertian>(GREEN));
-    scene.addYZPlane(0, 555, 0, 555, 0, std::make_shared<Lambertian>(RED));
-    scene.addXZPlane(213, 343, 227, 332, 554, std::make_shared<Light>(GRAY));
-    scene.addXZPlane(0, 555, 0, 555, 0, std::make_shared<Lambertian>(WHITE));
-    scene.addXZPlane(0, 555, 0, 555, 555, std::make_shared<Lambertian>(WHITE));
-    scene.addXYPlane(0, 555, 0, 555, 555, std::make_shared<Lambertian>(WHITE));
+    const int centerZ = -2;
+    
+    const int sizeX = 1;
+    const int sizeY = 1;
+    const int sizeZ = 1;
+
+    scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, std::make_shared<Lambertian>(WHITE)); // back
+    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, std::make_shared<Lambertian>(GREEN)); // left
+    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, sizeX, std::make_shared<Lambertian>(RED)); // right
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, std::make_shared<Lambertian>(WHITE)); // bottom
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, std::make_shared<Lambertian>(WHITE)); // bottom
+    
+//    scene.addXZPlane(213, 227, 343, 332, 554, std::make_shared<Light>(GRAY));
+    
+    scene.backgroundColor = GRAY;
     
     return scene;
 }
@@ -96,10 +107,11 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
                                                    inside,
                                                    scatteredRay,
                                                    scatteredColor);
+
         if (!didScatter) {
             return emissionColor;
         }
-        return emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1);
+        return scatteredColor; // emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1);
     }
     
     return scene.backgroundColor;

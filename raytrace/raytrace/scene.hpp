@@ -38,7 +38,7 @@ struct Scene {
                     const float z2,
                     const float y,
                     std::shared_ptr<Material> material) {
-        geometry.push_back(std::make_shared<XYPlane>(x1, z1, x2, z2, y, material));
+        geometry.push_back(std::make_shared<XZPlane>(x1, z1, x2, z2, y, material));
     }
     
     void addYZPlane(const float y1,
@@ -47,7 +47,7 @@ struct Scene {
                     const float z2,
                     const float x,
                     std::shared_ptr<Material> material)  {
-        geometry.push_back(std::make_shared<XYPlane>(y1, z1, y2, z2, x, material));
+        geometry.push_back(std::make_shared<YZPlane>(y1, z1, y2, z2, x, material));
     }
 };
 

@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     const glm::vec3 lookAt = glm::vec3(0, 0, -1);
     
     Camera camera(lookFrom, glm::vec2(cameraCCDwidth, cameraCCDheight), lookAt, focal, aperture);
-    Scene scene = generateScene();
+    Scene scene = generateCornellBoxScene();
     
     for (int row = 0; row < FLAGS_height; row++) {
         for (int col = 0; col < FLAGS_width; col++) {
