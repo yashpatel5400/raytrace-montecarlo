@@ -58,14 +58,14 @@ Scene generateCornellBoxScene() {
     const int sizeY = 50;
     const int sizeZ = 50;
 
-    scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, std::make_shared<Lambertian>(WHITE)); // back
-    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, std::make_shared<Lambertian>(GREEN)); // left
-    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, sizeX, std::make_shared<Lambertian>(RED)); // right
-    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, std::make_shared<Lambertian>(WHITE)); // bottom
-    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, std::make_shared<Lambertian>(WHITE)); // top
+    scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, true, std::make_shared<Lambertian>(WHITE)); // back
+    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, true, std::make_shared<Lambertian>(GREEN)); // left
+    scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, sizeX, false, std::make_shared<Lambertian>(RED)); // right
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, true, std::make_shared<Lambertian>(WHITE)); // bottom
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, true, std::make_shared<Lambertian>(WHITE)); // top
     
     scene.addXZPlane(-sizeX / 2.0f, centerZ - sizeZ / 2.0f,
-                     sizeX / 2.0f, centerZ + sizeZ / 2.0f, sizeY - 0.025, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
+                     sizeX / 2.0f, centerZ + sizeZ / 2.0f, sizeY - 0.025, true, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
     scene.backgroundColor = BLACK;
     

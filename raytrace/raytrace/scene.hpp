@@ -28,8 +28,9 @@ struct Scene {
                     const float x2,
                     const float y2,
                     const float z,
+                    const bool facingAxis,
                     std::shared_ptr<Material> material) {
-        geometry.push_back(std::make_shared<XYPlane>(x1, y1, x2, y2, z, material));
+        geometry.push_back(std::make_shared<XYPlane>(x1, y1, x2, y2, z, facingAxis, material));
     }
     
     void addXZPlane(const float x1,
@@ -37,8 +38,9 @@ struct Scene {
                     const float x2,
                     const float z2,
                     const float y,
+                    const bool facingAxis,
                     std::shared_ptr<Material> material) {
-        geometry.push_back(std::make_shared<XZPlane>(x1, z1, x2, z2, y, material));
+        geometry.push_back(std::make_shared<XZPlane>(x1, z1, x2, z2, y, facingAxis, material));
     }
     
     void addYZPlane(const float y1,
@@ -46,8 +48,9 @@ struct Scene {
                     const float y2,
                     const float z2,
                     const float x,
+                    const bool facingAxis,
                     std::shared_ptr<Material> material)  {
-        geometry.push_back(std::make_shared<YZPlane>(y1, z1, y2, z2, x, material));
+        geometry.push_back(std::make_shared<YZPlane>(y1, z1, y2, z2, x, facingAxis, material));
     }
 };
 

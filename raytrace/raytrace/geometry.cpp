@@ -42,6 +42,6 @@ glm::vec3 Sphere::normal(const glm::vec3& intersectionPoint) {
 
 glm::vec3 AxisAlignedPlane::normal(const glm::vec3& intersectionPoint) {
     glm::vec3 normalVector(0, 0, 0);
-    normalVector[constAxisIndex] = 1;
+    normalVector[constAxisIndex] = facingAxis ? 1 : -1;
     return normalVector;
 }

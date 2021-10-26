@@ -40,6 +40,7 @@ struct AxisAlignedPlane : public Geometry {
     float varAxis11, varAxis21, varAxis12, varAxis22;
     float constAxis;
     int varAxis1Index, varAxis2Index, constAxisIndex;
+    bool facingAxis;
     
     AxisAlignedPlane() : varAxis11(0), varAxis21(0), varAxis12(0), varAxis22(0), constAxis(0),
                          varAxis1Index(0), varAxis2Index(0), constAxisIndex(0) {}
@@ -52,6 +53,7 @@ struct AxisAlignedPlane : public Geometry {
                      const int varAxis1Index,
                      const int varAxis2Index,
                      const int constAxisIndex,
+                     const bool facingAxis, // determines direction of normal
                      std::shared_ptr<Material> material) :
                         varAxis11(varAxis11),
                         varAxis21(varAxis21),
@@ -61,6 +63,7 @@ struct AxisAlignedPlane : public Geometry {
                         varAxis1Index(varAxis1Index),
                         varAxis2Index(varAxis2Index),
                         constAxisIndex(constAxisIndex),
+                        facingAxis(facingAxis),
                         Geometry(material) {}
     
     float intersect(const Ray& ray) override;
@@ -73,7 +76,8 @@ struct XYPlane : public AxisAlignedPlane {
             const float x2,
             const float y2,
             const float z,
-            std::shared_ptr<Material> material) : AxisAlignedPlane(x1, y1, x2, y2, z, 0, 1, 2, material) {}
+            const bool facingAxis, // determines direction of normal
+            std::shared_ptr<Material> material) : AxisAlignedPlane(x1, y1, x2, y2, z, 0, 1, 2, facingAxis, material) {}
 };
 
 struct XZPlane : public AxisAlignedPlane {
@@ -82,7 +86,8 @@ struct XZPlane : public AxisAlignedPlane {
             const float x2,
             const float z2,
             const float y,
-            std::shared_ptr<Material> material) : AxisAlignedPlane(x1, z1, x2, z2, y, 0, 2, 1, material) {}
+            const bool facingAxis, // determines direction of normal
+            std::shared_ptr<Material> material) : AxisAlignedPlane(x1, z1, x2, z2, y, 0, 2, 1, facingAxis, material) {}
 };
 
 struct YZPlane : public AxisAlignedPlane {
@@ -91,7 +96,8 @@ struct YZPlane : public AxisAlignedPlane {
             const float y2,
             const float z2,
             const float x,
-            std::shared_ptr<Material> material) : AxisAlignedPlane(y1, z1, y2, z2, x, 1, 2, 0, material) {}
+            const bool facingAxis, // determines direction of normal
+            std::shared_ptr<Material> material) : AxisAlignedPlane(y1, z1, y2, z2, x, 1, 2, 0, facingAxis, material) {}
 };
 
 #endif /* geometry_hpp */
