@@ -8,6 +8,8 @@
 
 #include "geometry.hpp"
 
+#include <iostream>
+
 // borrowed from https://viclw17.github.io/2018/07/16/raytracing-ray-sphere-intersection
 float Sphere::intersect(const Ray& ray) {
     glm::vec3 sphereToOrigin = ray.origin - center;
@@ -44,4 +46,43 @@ glm::vec3 AxisAlignedPlane::normal(const glm::vec3& intersectionPoint) {
     glm::vec3 normalVector(0, 0, 0);
     normalVector[constAxisIndex] = facingAxis ? 1 : -1;
     return normalVector;
+}
+
+Box::Box(const glm::vec3& minCorner,
+         const glm::vec3& maxCorner,
+         std::shared_ptr<Material> material) : Geometry(material) {
+    sides.push_back(std::make_shared<XYPlane>(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y, minCorner.z, false, material)); // back
+    sides.push_back(std::make_shared<XYPlane>(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y, maxCorner.z, true, material)); // front
+    sides.push_back(std::make_shared<XZPlane>(minCorner.x, minCorner.z, maxCorner.x, maxCorner.z, minCorner.y, false, material)); // bottom
+    sides.push_back(std::make_shared<XZPlane>(minCorner.x, minCorner.z, maxCorner.x, maxCorner.z, maxCorner.y, true, material)); // top
+    sides.push_back(std::make_shared<YZPlane>(minCorner.y, minCorner.z, maxCorner.y, maxCorner.z, minCorner.x, false, material)); // left
+    sides.push_back(std::make_shared<YZPlane>(minCorner.y, minCorner.z, maxCorner.y, maxCorner.z, maxCorner.x, true, material)); // right
+}
+
+float Box::intersect(const Ray& ray) {
+    std::shared_ptr<AxisAlignedPlane> closestSide;
+    float closestIntersection = std::numeric_limits<float>::max();
+    
+    for (const std::shared_ptr<AxisAlignedPlane>& side : sides) {
+        float t = side->intersect(ray);
+        if (t > 0.0 && t < closestIntersection) {
+            closestIntersection = t;
+            closestSide = side;
+        }
+    }
+    
+    if (closestIntersection < std::numeric_limits<float>::max()) {
+        glm::vec3 intersection = ray.origin + closestIntersection * ray.direction;
+        intersectedSideNormal = closestSide->normal(intersection);
+        return closestIntersection;
+    }
+    
+    intersectedSideNormal = glm::vec3(0, 0, 0); // no normal if no intersection
+    return -1.0;
+}
+
+glm::vec3 Box::normal(const glm::vec3& intersectionPoint) {
+    // this is poor design, but think fixing it would be a bit of a pain, so just storing the value from intersect
+    // and just assuming that the normal is always gonna be called after a call to intersect()
+    return intersectedSideNormal;
 }

@@ -52,11 +52,11 @@ Scene generateBallScene() {
 Scene generateCornellBoxScene() {
     Scene scene;
     
-    const int centerZ = -107;
+    const int centerZ = -765;
     
-    const int sizeX = 50;
-    const int sizeY = 50;
-    const int sizeZ = 50;
+    const int sizeX = 500;
+    const int sizeY = 500;
+    const int sizeZ = 250;
 
     scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, true, std::make_shared<Lambertian>(WHITE)); // back
     scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, true, std::make_shared<Lambertian>(GREEN)); // left
@@ -64,8 +64,15 @@ Scene generateCornellBoxScene() {
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, true, std::make_shared<Lambertian>(WHITE)); // bottom
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, true, std::make_shared<Lambertian>(WHITE)); // top
     
-    scene.addXZPlane(-sizeX / 2.0f, centerZ - sizeZ / 2.0f,
-                     sizeX / 2.0f, centerZ + sizeZ / 2.0f, sizeY - 0.025, true, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
+    scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
+                     sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
+    
+    scene.addBox(glm::vec3(-150.0 + -sizeX / 3.0, -sizeY + 0.01, -50.0 + centerZ - sizeZ / 3.0),
+                 glm::vec3(-150.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, -50.0 + centerZ + sizeZ / 3.0),
+                 std::make_shared<Lambertian>(WHITE));
+    scene.addBox(glm::vec3(250.0 + -sizeX / 4.0, -sizeY + 0.01, 250.0 + centerZ - sizeZ / 4.0),
+                 glm::vec3(250.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 250.0 + centerZ + sizeZ / 4.0),
+                 std::make_shared<Lambertian>(WHITE));
     
     scene.backgroundColor = BLACK;
     
@@ -108,7 +115,6 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
                                                    inside,
                                                    scatteredRay,
                                                    scatteredColor);
-
         if (!didScatter) {
             return emissionColor;
         }

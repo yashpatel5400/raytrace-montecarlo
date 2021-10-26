@@ -52,6 +52,12 @@ struct Scene {
                     std::shared_ptr<Material> material)  {
         geometry.push_back(std::make_shared<YZPlane>(y1, z1, y2, z2, x, facingAxis, material));
     }
+    
+    void addBox(const glm::vec3& minCorner,
+                const glm::vec3& maxCorner,
+                std::shared_ptr<Material> material)  {
+        geometry.push_back(std::make_shared<Box>(minCorner, maxCorner, material));
+    }
 };
 
 Scene generateBallScene();

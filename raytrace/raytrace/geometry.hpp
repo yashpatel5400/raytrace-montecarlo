@@ -100,4 +100,17 @@ struct YZPlane : public AxisAlignedPlane {
             std::shared_ptr<Material> material) : AxisAlignedPlane(y1, z1, y2, z2, x, 1, 2, 0, facingAxis, material) {}
 };
 
+
+struct Box : public Geometry {
+    std::vector<std::shared_ptr<AxisAlignedPlane>> sides;
+    glm::vec3 intersectedSideNormal;
+    
+    Box(const glm::vec3& minCorner,
+        const glm::vec3& maxCorner,
+        std::shared_ptr<Material> material);
+    
+    float intersect(const Ray& ray) override;
+    glm::vec3 normal(const glm::vec3& intersectionPoint) override;
+};
+
 #endif /* geometry_hpp */
