@@ -64,8 +64,8 @@ Scene generateCornellBoxScene() {
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, std::make_shared<Lambertian>(WHITE)); // bottom
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, std::make_shared<Lambertian>(WHITE)); // top
     
-    scene.addXZPlane(-sizeX / 4.0f, centerZ - sizeZ / 4.0f,
-                     sizeX / 4.0f, centerZ + sizeZ / 4.0f, sizeY - 0.025, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
+    scene.addXZPlane(-sizeX / 2.0f, centerZ - sizeZ / 2.0f,
+                     sizeX / 2.0f, centerZ + sizeZ / 2.0f, sizeY - 0.025, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
     scene.backgroundColor = BLACK;
     
