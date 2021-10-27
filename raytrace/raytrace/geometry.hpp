@@ -70,6 +70,7 @@ struct AxisAlignedPlane : public Geometry {
                         Geometry(material) {}
     
     float intersect(const Ray& ray, glm::vec3& intersection) override;
+    float intersect(const Ray& ray, glm::vec3& intersection, const glm::vec3& offset);
     glm::vec3 normal(const glm::vec3& intersectionPoint) override;
 };
 
@@ -109,10 +110,12 @@ struct YZPlane : public AxisAlignedPlane {
 
 struct Box : public Geometry {
     std::vector<std::shared_ptr<AxisAlignedPlane>> sides;
+    glm::vec3 offset;
     glm::vec3 intersectedSideNormal;
     
     Box(const glm::vec3& minCorner,
         const glm::vec3& maxCorner,
+        const glm::vec3& offset,
         const float yAxisRotation,
         std::shared_ptr<Material> material);
     

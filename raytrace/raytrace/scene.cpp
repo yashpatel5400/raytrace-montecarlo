@@ -52,7 +52,7 @@ Scene generateBallScene() {
 Scene generateCornellBoxScene() {
     Scene scene;
     
-    const int centerZ = -765;
+    const int centerZ = -775;
     
     const int sizeX = 500;
     const int sizeY = 500;
@@ -67,14 +67,16 @@ Scene generateCornellBoxScene() {
     scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
                      sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
-    scene.addBox(glm::vec3(-150.0 + -sizeX / 3.0, -sizeY + 0.01, -50.0 + centerZ - sizeZ / 3.0),
-                 glm::vec3(-150.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, -50.0 + centerZ + sizeZ / 3.0),
+    scene.addBox(glm::vec3(-300.0 + -sizeX / 3.0, -sizeY + 0.01, -10.0 + centerZ - sizeZ / 3.0),
+                 glm::vec3(-300.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, -10.0 + centerZ + sizeZ / 3.0),
+                 glm::vec3(25, 0, 0),
+                 -0.1,
+                 std::make_shared<Lambertian>(MAROON));
+    scene.addBox(glm::vec3(-150.0 + -sizeX / 4.0, -sizeY + 0.01, 175.0 + centerZ - sizeZ / 4.0),
+                 glm::vec3(-150.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 175.0 + centerZ + sizeZ / 4.0),
+                 glm::vec3(500, 0, 0),
                  0.1,
-                 std::make_shared<Lambertian>(WHITE));
-    scene.addBox(glm::vec3(250.0 + -sizeX / 4.0, -sizeY + 0.01, 250.0 + centerZ - sizeZ / 4.0),
-                 glm::vec3(250.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 250.0 + centerZ + sizeZ / 4.0),
-                 -0.3,
-                 std::make_shared<Lambertian>(WHITE));
+                 std::make_shared<Lambertian>(MAROON));
     
     scene.backgroundColor = BLACK;
     
@@ -87,36 +89,37 @@ Scene generateCornellBoxScene() {
  *
  */
 Color castRay(const Scene& scene, const Ray& ray, int bounce) {
-//    std::cout << bounce << std::endl;
     if (bounce < 0) {
         return BLACK;
     }
     
     std::shared_ptr<Geometry> closestObject;
     float closestIntersection = std::numeric_limits<float>::max();
-    glm::vec3 intersectionPoint;
+    glm::vec3 closestIntersectionPoint;
     for (const std::shared_ptr<Geometry>& geometry : scene.geometry) {
+        glm::vec3 intersectionPoint;
         float intersection = geometry->intersect(ray, intersectionPoint);
         if (intersection > 0 && intersection < closestIntersection) {
             closestIntersection = intersection;
+            closestIntersectionPoint = intersectionPoint;
             closestObject = geometry;
         }
     }
     
     if (closestIntersection < std::numeric_limits<float>::max()) {
-        glm::vec3 normal = closestObject->normal(intersectionPoint);
+        glm::vec3 normal = closestObject->normal(closestIntersectionPoint);
         bool inside = glm::dot(ray.direction, normal) > 0;
 
         Ray scatteredRay;
         Color scatteredColor;
-        Color emissionColor = closestObject->material->emit(intersectionPoint);
+        Color emissionColor = closestObject->material->emit(closestIntersectionPoint);
         
         bool didScatter = closestObject->material->scatter(ray,
-                                                   intersectionPoint,
-                                                   normal,
-                                                   inside,
-                                                   scatteredRay,
-                                                   scatteredColor);
+                                                           closestIntersectionPoint,
+                                                           normal,
+                                                           inside,
+                                                           scatteredRay,
+                                                           scatteredColor);
         if (!didScatter) {
             return emissionColor;
         }

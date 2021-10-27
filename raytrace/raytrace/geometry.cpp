@@ -26,17 +26,21 @@ float Sphere::intersect(const Ray& ray, glm::vec3& intersection) {
 }
 
 float AxisAlignedPlane::intersect(const Ray& ray, glm::vec3& intersection) {
+    return intersect(ray, intersection, glm::vec3(0, 0, 0));
+}
+
+float AxisAlignedPlane::intersect(const Ray& ray, glm::vec3& intersection, const glm::vec3& offset) {
     Ray rotatedRay = ray;
-//    rotatedRay.origin -= glm::vec3(250, 0, 0);
-    
     rotatedRay.origin.x = cos(yAxisRotation) * ray.origin.x - sin(yAxisRotation) * ray.origin.z;
     rotatedRay.origin.z = sin(yAxisRotation) * ray.origin.x + cos(yAxisRotation) * ray.origin.z;
 
     rotatedRay.direction.x = cos(yAxisRotation) * ray.direction.x - sin(yAxisRotation) * ray.direction.z;
     rotatedRay.direction.z = sin(yAxisRotation) * ray.direction.x + cos(yAxisRotation) * ray.direction.z;
     
+    rotatedRay.origin -= offset;
+    
     // how long along the trajectory until intersecting plane
-    float t = (constAxis - rotatedRay.direction[constAxisIndex]) / rotatedRay.direction[constAxisIndex];
+    float t = (constAxis - rotatedRay.origin[constAxisIndex]) / rotatedRay.direction[constAxisIndex];
     if (t < 0) {
         return -1.0;
     }
@@ -48,10 +52,9 @@ float AxisAlignedPlane::intersect(const Ray& ray, glm::vec3& intersection) {
     }
     
     intersection =  potentialIntersection;
+    intersection += offset;
     intersection.x =  cos(yAxisRotation) * potentialIntersection.x + sin(yAxisRotation) * potentialIntersection.z;
     intersection.z = -sin(yAxisRotation) * potentialIntersection.x + cos(yAxisRotation) * potentialIntersection.z;
-//    intersection += glm::vec3(5, 0, 0);
-    
     return t;
 }
 
@@ -71,8 +74,9 @@ glm::vec3 AxisAlignedPlane::normal(const glm::vec3& intersectionPoint) {
 
 Box::Box(const glm::vec3& minCorner,
          const glm::vec3& maxCorner,
+         const glm::vec3& offset,
          const float yAxisRotation,
-         std::shared_ptr<Material> material) : Geometry(material) {
+         std::shared_ptr<Material> material) : offset(offset), Geometry(material) {
     sides.push_back(std::make_shared<XYPlane>(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y, minCorner.z, false, yAxisRotation, material)); // back
     sides.push_back(std::make_shared<XYPlane>(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y, maxCorner.z, true, yAxisRotation, material)); // front
     sides.push_back(std::make_shared<XZPlane>(minCorner.x, minCorner.z, maxCorner.x, maxCorner.z, minCorner.y, false, yAxisRotation, material)); // bottom
@@ -84,18 +88,21 @@ Box::Box(const glm::vec3& minCorner,
 float Box::intersect(const Ray& ray, glm::vec3& intersection) {
     std::shared_ptr<AxisAlignedPlane> closestSide;
     float closestIntersection = std::numeric_limits<float>::max();
+    glm::vec3 closestIntersectionPoint;
     
     for (const std::shared_ptr<AxisAlignedPlane>& side : sides) {
-        float t = side->intersect(ray, intersection);
+        glm::vec3 intersectionPoint;
+        float t = side->intersect(ray, intersectionPoint, offset);
         if (t > 0.0 && t < closestIntersection) {
             closestIntersection = t;
+            closestIntersectionPoint = intersectionPoint;
             closestSide = side;
         }
     }
     
     if (closestIntersection < std::numeric_limits<float>::max()) {
-        intersection = ray.origin + closestIntersection * ray.direction;
-        intersectedSideNormal = closestSide->normal(intersection);
+        intersection = closestIntersectionPoint;
+        intersectedSideNormal = closestSide->normal(closestIntersectionPoint);
         return closestIntersection;
     }
     

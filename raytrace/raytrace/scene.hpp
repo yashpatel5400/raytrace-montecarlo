@@ -58,9 +58,10 @@ struct Scene {
     
     void addBox(const glm::vec3& minCorner,
                 const glm::vec3& maxCorner,
+                const glm::vec3& offset,
                 const float yAxisRotation,
                 std::shared_ptr<Material> material)  {
-        geometry.push_back(std::make_shared<Box>(minCorner, maxCorner, yAxisRotation, material));
+        geometry.push_back(std::make_shared<Box>(minCorner, maxCorner, offset, yAxisRotation, material));
     }
 };
 
