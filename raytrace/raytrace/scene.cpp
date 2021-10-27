@@ -52,7 +52,7 @@ Scene generateBallScene() {
 Scene generateCornellBoxScene() {
     Scene scene;
     
-    const int centerZ = -775;
+    const int centerZ = -1500;
     
     const int sizeX = 500;
     const int sizeY = 500;
@@ -64,19 +64,17 @@ Scene generateCornellBoxScene() {
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, true, 0.0, std::make_shared<Lambertian>(WHITE)); // bottom
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, true, 0.0, std::make_shared<Lambertian>(WHITE)); // top
     
-    scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
-                     sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
+    scene.addXZPlane(-sizeX / 1.0, centerZ - sizeZ / 1.0,
+                     sizeX / 1.0, centerZ + sizeZ / 1.0, sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
-    scene.addBox(glm::vec3(-300.0 + -sizeX / 3.0, -sizeY + 0.01, -10.0 + centerZ - sizeZ / 3.0),
-                 glm::vec3(-300.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, -10.0 + centerZ + sizeZ / 3.0),
-                 glm::vec3(25, 0, 0),
-                 -0.1,
-                 std::make_shared<Lambertian>(MAROON));
-    scene.addBox(glm::vec3(-150.0 + -sizeX / 4.0, -sizeY + 0.01, 175.0 + centerZ - sizeZ / 4.0),
-                 glm::vec3(-150.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 175.0 + centerZ + sizeZ / 4.0),
-                 glm::vec3(500, 0, 0),
-                 0.1,
-                 std::make_shared<Lambertian>(MAROON));
+    scene.addBox(glm::vec3(550.0 + -sizeX / 3.0, -sizeY + 0.01, 10.0 + centerZ - sizeZ / 3.0),
+                 glm::vec3(550.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, 10.0 + centerZ + sizeZ / 3.0),
+                 0.45,
+                 std::make_shared<Lambertian>(WHITE));
+    scene.addBox(glm::vec3(-650.0 + -sizeX / 4.0, -sizeY + 0.01, 225.0 + centerZ - sizeZ / 4.0),
+                 glm::vec3(-650.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 225.0 + centerZ + sizeZ / 4.0),
+                 -0.55,
+                 std::make_shared<Lambertian>(WHITE));
     
     scene.backgroundColor = BLACK;
     

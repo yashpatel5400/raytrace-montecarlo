@@ -42,8 +42,11 @@ int main(int argc, char *argv[]) {
     result << "P3\n" << FLAGS_width << ' ' << FLAGS_height << "\n255\n";
     
     const float imageAspectRatio = FLAGS_width / FLAGS_height;
-    const float cameraCCDheight = 2.0; // nice to have ccd have size [-1, 1] by default
-    const float cameraCCDwidth = cameraCCDheight * imageAspectRatio;
+    
+    const float theta = M_PI / 4;
+    float h = tan(theta/2);
+    float cameraCCDheight = 2.0 * h;
+    float cameraCCDwidth = imageAspectRatio * cameraCCDheight;
     const float focal = 1.0;
     const float aperture = 0.0;
     
