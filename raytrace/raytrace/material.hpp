@@ -39,10 +39,15 @@ struct Material {
                                const glm::vec3& normal,
                                const bool inside,
                                Ray& out,
-                               Color& outColor) const = 0;
+                               Color& outColor,
+                               double& pdf) const = 0;
     
     virtual Color emit(const glm::vec3& intersection) const {
         return Color(0, 0, 0);
+    }
+    
+    virtual double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+        return 0;
     }
 };
 
@@ -54,8 +59,10 @@ struct Lambertian : public Material {
                        const glm::vec3& normal,
                        const bool inside,
                        Ray& out,
-                       Color& outColor) const override;
-
+                       Color& outColor,
+                       double& pdf) const override;
+    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
+    
     Color texture;
 };
 
@@ -67,8 +74,10 @@ struct Metal : public Material {
                        const glm::vec3& normal,
                        const bool inside,
                        Ray& out,
-                       Color& outColor) const override;
-
+                       Color& outColor,
+                       double& pdf) const override;
+    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
+    
     Color texture;
     float roughness;
 };
@@ -81,8 +90,10 @@ struct Dielectric : public Material {
                        const glm::vec3& normal,
                        const bool inside,
                        Ray& out,
-                       Color& outColor) const override;
-
+                       Color& outColor,
+                       double& pdf) const override;
+    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
+    
     float ior;
 };
 
@@ -94,7 +105,9 @@ struct Light : public Material {
                        const glm::vec3& normal,
                        const bool inside,
                        Ray& out,
-                       Color& outColor) const override;
+                       Color& outColor,
+                       double& pdf) const override;
+    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
     
     Color emit(const glm::vec3& intersection) const override;
 

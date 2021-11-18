@@ -8,6 +8,7 @@
 
 #include "material.hpp"
 
+#include "math.h"
 #include <glm/gtc/random.hpp>
 
 // TODO: here is the other major spot for improving sampling from the BRDF function
@@ -31,7 +32,8 @@ const bool Lambertian::scatter(const Ray& in,
                                const glm::vec3& normal,
                                const bool inside,
                                Ray& out,
-                               Color& outColor) const {
+                               Color& outColor,
+                               double& pdf) const {
     glm::vec3 outDirection = glm::normalize(normal + sampleUnitSphere());
     
     // edge case that we should avoid
@@ -42,17 +44,24 @@ const bool Lambertian::scatter(const Ray& in,
     
     out = Ray(outDirection, intersection);
     outColor = texture;
+    pdf = scatterPDF(in.direction, outDirection);
     return true;
+}
+
+double Lambertian::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+    float cos = glm::dot(glm::normalize(inDirection), glm::normalize(outDirection));
+    return fmax(0.01, cos / M_PI);
 }
 
 Metal::Metal(const Color& texture, float roughness) : texture(texture), roughness(roughness) {}
     
 const bool Metal::scatter(const Ray& in,
-                   const glm::vec3& intersection,
-                   const glm::vec3& normal,
-                   const bool inside,
-                   Ray& out,
-                   Color& outColor) const {
+                          const glm::vec3& intersection,
+                          const glm::vec3& normal,
+                          const bool inside,
+                          Ray& out,
+                          Color& outColor,
+                          double& pdf) const {
     glm::vec3 outDirection = glm::reflect(in.direction, normal);
     // have some degree of scattering in the BRDF if material is modelled as being rough
     outDirection += sampleUnitSphere() * roughness;
@@ -60,17 +69,23 @@ const bool Metal::scatter(const Ray& in,
     
     out = Ray(outDirection, intersection);
     outColor = texture;
+    pdf = scatterPDF(in.direction, outDirection);
     return glm::dot(outDirection, normal) > 0;
+}
+
+double Metal::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+    return 0;
 }
 
 Dielectric::Dielectric(const float ior) : ior(ior) {}
 
 const bool Dielectric::scatter(const Ray& in,
-                   const glm::vec3& intersection,
-                   const glm::vec3& normal,
-                   const bool inside,
-                   Ray& out,
-                   Color& outColor) const {
+                               const glm::vec3& intersection,
+                               const glm::vec3& normal,
+                               const bool inside,
+                               Ray& out,
+                               Color& outColor,
+                               double& pdf) const {
     float cosTheta = fmin(glm::dot(-in.direction, normal), 1.0);
     float sinTheta = sqrt(1 - cosTheta * cosTheta);
     
@@ -87,20 +102,30 @@ const bool Dielectric::scatter(const Ray& in,
         : glm::refract(in.direction, normal, eta);
     out = Ray(outDirection, intersection);
     outColor = WHITE;
+    pdf = scatterPDF(in.direction, outDirection);
     return true;
+}
+
+double Dielectric::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+    return 0;
 }
 
 Light::Light(const Color& texture) : texture(texture) {}
 
 const bool Light::scatter(const Ray& in,
-                   const glm::vec3& intersection,
-                   const glm::vec3& normal,
-                   const bool inside,
-                   Ray& out,
-                   Color& outColor) const {
+                          const glm::vec3& intersection,
+                          const glm::vec3& normal,
+                          const bool inside,
+                          Ray& out,
+                          Color& outColor,
+                          double& pdf) const {
     return false; // light sources do not have scattering effects
 }
 
 Color Light::emit(const glm::vec3& intersection) const {
     return texture;
+}
+
+double Light::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+    return 0;
 }
