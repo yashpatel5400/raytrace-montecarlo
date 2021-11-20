@@ -8,6 +8,9 @@
 
 #include "material.hpp"
 
+
+#include "scene.hpp"
+
 #include <iostream>
 #include "math.h"
 #include <glm/gtc/random.hpp>
@@ -41,6 +44,32 @@ glm::mat3 localCoordSystem(const glm::vec3& n) {
     return transformer;
 }
 
+const int centerZ = -1500;
+
+const int sizeX = 500;
+const int sizeY = 500;
+const int sizeZ = 250;
+
+float computeLightPDF(const Ray& outbound) {
+    // need to determine whether the ray intersect the light (if not, 0 PDF)
+    const std::shared_ptr<XZPlane> light = std::make_shared<XZPlane>(
+                                                                     -sizeX / 2.0, centerZ - sizeZ / 2.0,
+                                                                     sizeX / 2.0, centerZ + sizeZ / 2.0,
+                                                                     sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY));
+    glm::vec3 intersectionPoint;
+    float intersection = light->intersect(outbound, intersectionPoint);
+    if (intersection < 0) {
+        return 0.0;
+    }
+    
+    glm::vec3 dirToLight = intersectionPoint - outbound.origin;
+    float distToLight2 = glm::dot(dirToLight, dirToLight);
+    dirToLight = glm::normalize(dirToLight);
+    float lightArea = 125000; // TODO: hardcoded light area! bleh
+    float cosineAlpha = fabs(dirToLight.y);
+    return distToLight2 / (cosineAlpha * lightArea);
+}
+
 // TODO: here is the other major spot for improving sampling from the BRDF function
 glm::vec3 sampleUnitSphere() {
     while (true) {
@@ -64,20 +93,63 @@ const bool Lambertian::scatter(const Ray& in,
                                Ray& out,
                                Color& outColor,
                                double& pdf) const {
-    // need to do change of basis to do sampling from out of the normal of intersection
-    glm::mat3 localBasis = localCoordSystem(normal);
-    glm::vec3 globalRandomDirection = uniformlySampleHemisphere();
-    glm::vec3 outDirection = glm::normalize(localBasis * globalRandomDirection);
+    /* ***********************************************************************
+     * Brief Interlude: Monte Carlo Importance Sampling
+     * -----------------------------------------------------------------------
+     * The next chunk of code is the *crux of the Monte Carlo importance sampling*
+     * in ray tracing. A quick explanation will probably help explain how it works:
+     *
+     * When we want to calculate E_X[A * s * color], we can choose any distribution
+     * for X ~ P, with the initial obvious choice being s. Instead, any other
+     * distribution *can* be used and often will totally change the variance profile
+     * (and therefore the convergence properties). In particular, we want to sample
+     * *more* from the light sources, since those are the most important directions
+     * for the final value of the color.
+     *
+     * The issue with just changing the sampling of the light rays directly is that
+     * (if we do this without changing anything else), the result is no longer
+     * guaranteed to converge with enough samples (!) So, we have to normalize it
+     * by the PDF of the sampling we take. Finding this pdf is mathematically rather
+     * simple, but an absolutely critical step to actually get the correct answer.
+     *
+     * The key realization is that linear interpolations a_i of a family of PDFs
+     * {f_i} in the form f(x) = \sum a_i * f_i(x) is itself a PDF and is precisel
+     * the PDF of interest if you are sampling with some probability from the light
+     * sources! This is what is actually defined in the function above and used
+     * in the following lines of code. It may seem simple (and the code is!) but the
+     * conceptual idea that underlies this is surprisingly involved and is belied
+     * by the seeming simplicity of the code.
+     *
+     * The PDF for rectangular light sources turns out to be simple: d(p,q)^2 / (cos(theta) * A)
+     * *********************************************************************** */
+    float alpha = 0.5; // mixing between light sampling and random sampling
+    glm::vec3 outDirection;
     
-    // edge case that we should avoid
-    const float kSmidgen = 1e-5;
-    if (fabs(outDirection.x) < kSmidgen && fabs(outDirection.y) < kSmidgen && fabs(outDirection.z) < kSmidgen) {
-        outDirection = normal;
+    if (glm::linearRand(0.0f, 1.0f) < alpha) {
+        glm::vec3 randomLightPoint(
+                                   glm::linearRand(-sizeX / 2.0, sizeX / 2.0),
+                                   sizeY - 0.0001,
+                                   glm::linearRand(centerZ - sizeZ / 2.0, centerZ + sizeZ / 2.0)
+        );
+        outDirection = glm::normalize(randomLightPoint - intersection);
+   } else {
+        // need to do change of basis to do sampling from out of the normal of intersection
+        glm::mat3 localBasis = localCoordSystem(normal);
+        glm::vec3 globalRandomDirection = uniformlySampleHemisphere();
+        outDirection = glm::normalize(localBasis * globalRandomDirection);
+        // edge case that we should avoid
+        const float kSmidgen = 1e-5;
+        if (fabs(outDirection.x) < kSmidgen && fabs(outDirection.y) < kSmidgen && fabs(outDirection.z) < kSmidgen) {
+            outDirection = normal;
+        }
     }
     
     out = Ray(outDirection, intersection);
     outColor = texture;
-    pdf = glm::dot(localBasis[2], outDirection) / M_PI; // PDF of *sampling* PDF (NOT necessarily scatter PDF)
+    
+    float lightPDF = computeLightPDF(out);
+    float hemispherePDF = glm::dot(normal, outDirection) / M_PI; // PDF of *sampling* PDF (NOT necessarily scatter PDF)
+    pdf = alpha * lightPDF + (1 - alpha) * hemispherePDF;
     return true;
 }
 

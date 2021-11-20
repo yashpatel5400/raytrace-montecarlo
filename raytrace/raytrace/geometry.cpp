@@ -36,6 +36,7 @@ float AxisAlignedPlane::intersect(const Ray& ray, glm::vec3& intersection) {
     
     // how long along the trajectory until intersecting plane
     float t = (constAxis - rotatedRay.origin[constAxisIndex]) / rotatedRay.direction[constAxisIndex];
+//    std::cout << "t? : " << constAxis << " | " << rotatedRay.origin[constAxisIndex] << " | " << ray.direction[constAxisIndex] << std::endl;
     if (t < 0) {
         return -1.0;
     }
