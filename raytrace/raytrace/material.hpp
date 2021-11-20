@@ -42,7 +42,7 @@ struct Material {
                                Color& outColor,
                                double& pdf) const = 0;
     
-    virtual Color emit(const glm::vec3& intersection) const {
+    virtual Color emit(const glm::vec3& intersection, const glm::vec3& normal) const {
         return Color(0, 0, 0);
     }
     
@@ -109,7 +109,7 @@ struct Light : public Material {
                        double& pdf) const override;
     double scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const override;
     
-    Color emit(const glm::vec3& intersection) const override;
+    Color emit(const glm::vec3& intersection, const glm::vec3& normal) const override;
 
     Color texture;
 };

@@ -155,7 +155,11 @@ const bool Light::scatter(const Ray& in,
     return false; // light sources do not have scattering effects
 }
 
-Color Light::emit(const glm::vec3& intersection) const {
+Color Light::emit(const glm::vec3& intersection, const glm::vec3& normal) const {
+    // TODO: hard-coded normal for unidirectional light forces lights to all be y axis aligned
+    if (normal.y < 0) {
+        return Color(0, 0, 0);
+    }
     return texture;
 }
 

@@ -49,14 +49,14 @@ Scene generateBallScene() {
     return scene;
 }
 
+const int centerZ = -1500;
+
+const int sizeX = 500;
+const int sizeY = 500;
+const int sizeZ = 250;
+
 Scene generateCornellBoxScene() {
     Scene scene;
-    
-    const int centerZ = -1500;
-    
-    const int sizeX = 500;
-    const int sizeY = 500;
-    const int sizeZ = 250;
 
     scene.addXYPlane(-sizeX, -sizeY, sizeX, sizeY, centerZ - sizeZ, true, 0.0, std::make_shared<Lambertian>(WHITE)); // back
     scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, true, 0.0, std::make_shared<Lambertian>(GREEN)); // left
@@ -66,8 +66,6 @@ Scene generateCornellBoxScene() {
     
     scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
                      sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
-    
-    std::cout << "Area: " << (sizeX / 2.0 - (-sizeX / 2.0)) * ((centerZ + sizeZ / 2.0) - (centerZ - sizeZ / 2.0)) << std::endl;
     
     scene.addBox(glm::vec3(550.0 + -sizeX / 3.0, -sizeY + 0.01, 10.0 + centerZ - sizeZ / 3.0),
                  glm::vec3(550.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, 10.0 + centerZ + sizeZ / 3.0),
@@ -112,7 +110,7 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
 
         Ray scatteredRay;
         Color scatteredColor;
-        Color emissionColor = closestObject->material->emit(closestIntersectionPoint);
+        Color emissionColor = closestObject->material->emit(closestIntersectionPoint, normal);
         double pdf;
         
         bool didScatter = closestObject->material->scatter(ray,
@@ -155,12 +153,6 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
          *
          * The PDF for rectangular light sources turns out to be simple: d(p,q)^2 / (cos(theta) * A)
          * *********************************************************************** */
-        const int centerZ = -1500;
-        
-        const int sizeX = 500;
-        const int sizeY = 500;
-        const int sizeZ = 250;
-
         glm::vec3 randomLightPoint(
                                    glm::linearRand(-sizeX / 2.0, sizeX / 2.0),
                                    sizeY,
