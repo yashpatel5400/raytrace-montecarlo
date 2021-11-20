@@ -122,7 +122,7 @@ const bool Lambertian::scatter(const Ray& in,
      *
      * The PDF for rectangular light sources turns out to be simple: d(p,q)^2 / (cos(theta) * A)
      * *********************************************************************** */
-    float alpha = 0.5; // mixing between light sampling and random sampling
+    float alpha = 0.0; // mixing between light sampling and random sampling
     glm::vec3 outDirection;
     
     if (glm::linearRand(0.0f, 1.0f) < alpha) {

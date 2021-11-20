@@ -71,10 +71,13 @@ Scene generateCornellBoxScene() {
                  glm::vec3(550.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, 10.0 + centerZ + sizeZ / 3.0),
                  0.45,
                  std::make_shared<Lambertian>(WHITE));
-    scene.addBox(glm::vec3(-650.0 + -sizeX / 4.0, -sizeY + 0.01, 225.0 + centerZ - sizeZ / 4.0),
-                 glm::vec3(-650.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 225.0 + centerZ + sizeZ / 4.0),
-                 -0.55,
-                 std::make_shared<Lambertian>(WHITE));
+//    scene.addBox(glm::vec3(-650.0 + -sizeX / 4.0, -sizeY + 0.01, 225.0 + centerZ - sizeZ / 4.0),
+//                 glm::vec3(-650.0 + sizeX / 4.0, -2.0 * sizeY / 5.0, 225.0 + centerZ + sizeZ / 4.0),
+//                 -0.55,
+//                 std::make_shared<Lambertian>(WHITE));
+    scene.addSphere(
+                    glm::vec3(150.0, -3.0 * sizeY / 5.0, 200.0 + centerZ - sizeZ / 4.0),
+                    200.0, std::make_shared<Dielectric>(1.5));
     
     scene.backgroundColor = BLACK;
     
@@ -126,6 +129,13 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
         
         // recall: E_{X ~ P}[A * color * (s / P)] is an MIS estimate w/ sampling distribution P and scatter S
         // this equation maps exactly to this line of code, with scatterPDF being S and pdf being P
+        
+        // if P == 0, that means the scattering distribution has not been defined for that material, so we *don't*
+        // do MIS in that case and just use standard sampling
+        if (pdf == 0.0) {
+            return emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1);
+        }
+        
         return emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1) *
             static_cast<float>(closestObject->material->scatterPDF(normal, scatteredRay.direction) / pdf);
     }
