@@ -8,8 +8,38 @@
 
 #include "material.hpp"
 
+#include <iostream>
 #include "math.h"
 #include <glm/gtc/random.hpp>
+
+// can be modified for arbitrary choice of function for sampling about z-axis
+glm::vec3 uniformlySampleHemisphere() {
+    float r1 = glm::linearRand(0.0f, 1.0f);
+    float r2 = glm::linearRand(0.0f, 1.0f);
+    
+    float phi = 2 * M_PI * r1;
+    
+    float x = cos(phi) * sqrt(r2);
+    float y = sin(phi) * sqrt(r2);
+    float z = sqrt(1 - r2);
+    return glm::vec3(x, y, z);
+}
+
+// taken from https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html#onedimensionalmcintegration
+glm::mat3 localCoordSystem(const glm::vec3& n) {
+    glm::vec3 normal = glm::normalize(n);
+    glm::vec3 a = (fabs(normal.x) > 0.9) ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
+    
+    glm::vec3 z = normal;
+    glm::vec3 y = glm::normalize(glm::cross(normal, a));
+    glm::vec3 x = glm::cross(z, y);
+    
+    glm::mat3 transformer;
+    transformer[0] = x;
+    transformer[1] = y;
+    transformer[2] = z;
+    return transformer;
+}
 
 // TODO: here is the other major spot for improving sampling from the BRDF function
 glm::vec3 sampleUnitSphere() {
@@ -34,7 +64,10 @@ const bool Lambertian::scatter(const Ray& in,
                                Ray& out,
                                Color& outColor,
                                double& pdf) const {
-    glm::vec3 outDirection = glm::normalize(normal + sampleUnitSphere());
+    // need to do change of basis to do sampling from out of the normal of intersection
+    glm::mat3 localBasis = localCoordSystem(normal);
+    glm::vec3 globalRandomDirection = uniformlySampleHemisphere();
+    glm::vec3 outDirection = glm::normalize(localBasis * globalRandomDirection);
     
     // edge case that we should avoid
     const float kSmidgen = 1e-5;
@@ -44,13 +77,13 @@ const bool Lambertian::scatter(const Ray& in,
     
     out = Ray(outDirection, intersection);
     outColor = texture;
-    pdf = scatterPDF(in.direction, outDirection);
+    pdf = glm::dot(localBasis[2], outDirection) / M_PI; // PDF of *sampling* PDF (NOT necessarily scatter PDF)
     return true;
 }
 
-double Lambertian::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
-    float cos = glm::dot(glm::normalize(inDirection), glm::normalize(outDirection));
-    return fmax(0.01, cos / M_PI);
+double Lambertian::scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const {
+    float cos = glm::dot(glm::normalize(normal), glm::normalize(outDirection));
+    return fmax(0.001, cos / M_PI);
 }
 
 Metal::Metal(const Color& texture, float roughness) : texture(texture), roughness(roughness) {}
@@ -73,7 +106,7 @@ const bool Metal::scatter(const Ray& in,
     return glm::dot(outDirection, normal) > 0;
 }
 
-double Metal::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+double Metal::scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const {
     return 0;
 }
 
@@ -106,7 +139,7 @@ const bool Dielectric::scatter(const Ray& in,
     return true;
 }
 
-double Dielectric::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+double Dielectric::scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const {
     return 0;
 }
 
@@ -126,6 +159,6 @@ Color Light::emit(const glm::vec3& intersection) const {
     return texture;
 }
 
-double Light::scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+double Light::scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const {
     return 0;
 }

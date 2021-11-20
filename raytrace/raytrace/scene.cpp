@@ -124,8 +124,10 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
             return emissionColor;
         }
         
+        // recall: E_{X ~ P}[A * color * (s / P)] is an MIS estimate w/ sampling distribution P and scatter S
+        // this equation maps exactly to this line of code, with scatterPDF being S and pdf being P
         return emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1) *
-            static_cast<float>(closestObject->material->scatterPDF(ray.direction, scatteredRay.direction) / pdf);
+            static_cast<float>(closestObject->material->scatterPDF(normal, scatteredRay.direction) / pdf);
     }
     
     return scene.backgroundColor;

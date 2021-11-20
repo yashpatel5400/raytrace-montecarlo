@@ -46,7 +46,7 @@ struct Material {
         return Color(0, 0, 0);
     }
     
-    virtual double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const {
+    virtual double scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const {
         return 0;
     }
 };
@@ -61,7 +61,7 @@ struct Lambertian : public Material {
                        Ray& out,
                        Color& outColor,
                        double& pdf) const override;
-    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
+    double scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const override;
     
     Color texture;
 };
@@ -76,7 +76,7 @@ struct Metal : public Material {
                        Ray& out,
                        Color& outColor,
                        double& pdf) const override;
-    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
+    double scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const override;
     
     Color texture;
     float roughness;
@@ -92,7 +92,7 @@ struct Dielectric : public Material {
                        Ray& out,
                        Color& outColor,
                        double& pdf) const override;
-    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
+    double scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const override;
     
     float ior;
 };
@@ -107,7 +107,7 @@ struct Light : public Material {
                        Ray& out,
                        Color& outColor,
                        double& pdf) const override;
-    double scatterPDF(const glm::vec3& inDirection, const glm::vec3& outDirection) const override;
+    double scatterPDF(const glm::vec3& normal, const glm::vec3& outDirection) const override;
     
     Color emit(const glm::vec3& intersection) const override;
 
