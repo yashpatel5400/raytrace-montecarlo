@@ -25,6 +25,21 @@ glm::vec3 uniformlySampleHemisphere() {
     float x = cos(phi) * sqrt(r2);
     float y = sin(phi) * sqrt(r2);
     float z = sqrt(1 - r2);
+
+    return glm::vec3(x, y, z);
+}
+
+// can be modified for arbitrary choice of function for sampling about z-axis
+glm::vec3 uniformlySampleSphere(const float radius, const float dist_sq) {
+    float r1 = glm::linearRand(0.0f, 1.0f);
+    float r2 = glm::linearRand(0.0f, 1.0f);
+    
+    float z = 1 + r2 * (sqrt(1 - radius * radius / dist_sq) - 1);
+    float phi = 2 * M_PI * r1;
+    
+    float x = cos(phi) * sqrt(1 - z * z);
+    float y = sin(phi) * sqrt(1 - z * z);
+
     return glm::vec3(x, y, z);
 }
 
@@ -52,10 +67,9 @@ const int sizeZ = 250;
 
 float computeLightPDF(const Ray& outbound) {
     // need to determine whether the ray intersect the light (if not, 0 PDF)
-    const std::shared_ptr<XZPlane> light = std::make_shared<XZPlane>(
-                                                                     -sizeX / 2.0, centerZ - sizeZ / 2.0,
+    const std::shared_ptr<XZPlane> light = std::make_shared<XZPlane>(-sizeX / 2.0, centerZ - sizeZ / 2.0,
                                                                      sizeX / 2.0, centerZ + sizeZ / 2.0,
-                                                                     sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY));
+                                                                     sizeY - .005, true, 0.0, std::make_shared<Light>(LIGHT_GRAY));
     glm::vec3 intersectionPoint;
     float intersection = light->intersect(outbound, intersectionPoint);
     if (intersection < 0) {
@@ -67,7 +81,27 @@ float computeLightPDF(const Ray& outbound) {
     dirToLight = glm::normalize(dirToLight);
     float lightArea = 125000; // TODO: hardcoded light area! bleh
     float cosineAlpha = fabs(dirToLight.y);
+    
     return distToLight2 / (cosineAlpha * lightArea);
+}
+
+float computeSpherePDF(const Ray& outbound) {
+    const std::shared_ptr<Sphere> glassBall = std::make_shared<Sphere>(glm::vec3(175.0, -3.0 * sizeY / 5.0, 200.0 + centerZ - sizeZ / 4.0),
+                                                                       200.0, std::make_shared<Dielectric>(1.5));
+    glm::vec3 intersectionPoint;
+    float intersection = glassBall->intersect(outbound, intersectionPoint);
+    if (intersection < 0) {
+        return 0.0;
+    }
+    
+    glm::vec3 dirToSphere = glassBall->center - outbound.origin;
+    float distToSphere2 = glm::dot(dirToSphere, dirToSphere);
+    
+    const float ratio = glassBall->radius * glassBall->radius / distToSphere2;
+    float cosThetaMax = sqrt(1 - ratio);
+    float solidAngle = 2 * M_PI * (1 - cosThetaMax);
+
+    return 1.0f / solidAngle;
 }
 
 // TODO: here is the other major spot for improving sampling from the BRDF function
@@ -122,19 +156,30 @@ const bool Lambertian::scatter(const Ray& in,
      *
      * The PDF for rectangular light sources turns out to be simple: d(p,q)^2 / (cos(theta) * A)
      * *********************************************************************** */
-    float alpha = 0.0; // mixing between light sampling and random sampling
     glm::vec3 outDirection;
+    glm::mat3 localBasis = localCoordSystem(normal);
     
-    if (glm::linearRand(0.0f, 1.0f) < alpha) {
+    std::vector<float> alphas = { 0.4, 0.7 } ; // mixing between light, sphere, and (implicit rest) random
+    const float randSampling = glm::linearRand(0.0f, 1.0f);
+    if (randSampling < alphas[0]) {
         glm::vec3 randomLightPoint(
                                    glm::linearRand(-sizeX / 2.0, sizeX / 2.0),
-                                   sizeY - 0.0001,
+                                   sizeY - .005,
                                    glm::linearRand(centerZ - sizeZ / 2.0, centerZ + sizeZ / 2.0)
         );
         outDirection = glm::normalize(randomLightPoint - intersection);
-   } else {
+    }
+    else if (randSampling < alphas[1]) {
+        glm::vec3 sphereCenter = glm::vec3(175.0, -3.0 * sizeY / 5.0, 200.0 + centerZ - sizeZ / 4.0);
+        const float sphereRadius = 200.0;
+        glm::vec3 directionToCenter = sphereCenter - intersection;
+        float sphereDistanceSq = glm::dot(directionToCenter, directionToCenter);
+
+        glm::vec3 globalRandomDirection = uniformlySampleSphere(sphereRadius, sphereDistanceSq);
+        outDirection = glm::normalize(localBasis * globalRandomDirection);
+    }
+    else {
         // need to do change of basis to do sampling from out of the normal of intersection
-        glm::mat3 localBasis = localCoordSystem(normal);
         glm::vec3 globalRandomDirection = uniformlySampleHemisphere();
         outDirection = glm::normalize(localBasis * globalRandomDirection);
         // edge case that we should avoid
@@ -148,8 +193,10 @@ const bool Lambertian::scatter(const Ray& in,
     outColor = texture;
     
     float lightPDF = computeLightPDF(out);
+    float spherePDF = computeSpherePDF(out);
     float hemispherePDF = glm::dot(normal, outDirection) / M_PI; // PDF of *sampling* PDF (NOT necessarily scatter PDF)
-    pdf = alpha * lightPDF + (1 - alpha) * hemispherePDF;
+    pdf = alphas[0] * lightPDF + (alphas[1] - alphas[0]) * spherePDF + (1 - alphas[1]) * hemispherePDF;
+    
     return true;
 }
 

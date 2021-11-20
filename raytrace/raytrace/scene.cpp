@@ -65,7 +65,7 @@ Scene generateCornellBoxScene() {
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, true, 0.0, std::make_shared<Lambertian>(WHITE)); // top
     
     scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
-                     sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
+                     sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - .005, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
     scene.addBox(glm::vec3(550.0 + -sizeX / 3.0, -sizeY + 0.01, 10.0 + centerZ - sizeZ / 3.0),
                  glm::vec3(550.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, 10.0 + centerZ + sizeZ / 3.0),
@@ -76,7 +76,7 @@ Scene generateCornellBoxScene() {
 //                 -0.55,
 //                 std::make_shared<Lambertian>(WHITE));
     scene.addSphere(
-                    glm::vec3(150.0, -3.0 * sizeY / 5.0, 200.0 + centerZ - sizeZ / 4.0),
+                    glm::vec3(175.0, -3.0 * sizeY / 5.0, 200.0 + centerZ - sizeZ / 4.0),
                     200.0, std::make_shared<Dielectric>(1.5));
     
     scene.backgroundColor = BLACK;
