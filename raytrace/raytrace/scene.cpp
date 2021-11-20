@@ -67,6 +67,8 @@ Scene generateCornellBoxScene() {
     scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
                      sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - 0.0001, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
     
+    std::cout << "Area: " << (sizeX / 2.0 - (-sizeX / 2.0)) * ((centerZ + sizeZ / 2.0) - (centerZ - sizeZ / 2.0)) << std::endl;
+    
     scene.addBox(glm::vec3(550.0 + -sizeX / 3.0, -sizeY + 0.01, 10.0 + centerZ - sizeZ / 3.0),
                  glm::vec3(550.0 + sizeX / 3.0, 1.0 * sizeY / 5.0, 10.0 + centerZ + sizeZ / 3.0),
                  0.45,
