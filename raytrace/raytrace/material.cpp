@@ -75,35 +75,6 @@ const bool Lambertian::scatter(const Ray& in,
         outDirection = normal;
     }
     
-    /* ***********************************************************************
-     * Brief Interlude: Monte Carlo Importance Sampling
-     * -----------------------------------------------------------------------
-     * The next chunk of code is the *crux of the Monte Carlo importance sampling*
-     * in ray tracing. A quick explanation will probably help explain how it works:
-     *
-     * When we want to calculate E_X[A * s * color], we can choose any distribution
-     * for X ~ P, with the initial obvious choice being s. Instead, any other
-     * distribution *can* be used and often will totally change the variance profile
-     * (and therefore the convergence properties). In particular, we want to sample
-     * *more* from the light sources, since those are the most important directions
-     * for the final value of the color.
-     *
-     * The issue with just changing the sampling of the light rays directly is that
-     * (if we do this without changing anything else), the result is no longer
-     * guaranteed to converge with enough samples (!) So, we have to normalize it
-     * by the PDF of the sampling we take. Finding this pdf is mathematically rather
-     * simple, but an absolutely critical step to actually get the correct answer.
-     *
-     * The key realization is that linear interpolations a_i of a family of PDFs
-     * {f_i} in the form f(x) = \sum a_i * f_i(x) is itself a PDF and is precisel
-     * the PDF of interest if you are sampling with some probability from the light
-     * sources! This is what is actually defined in the function above and used
-     * in the following lines of code. It may seem simple (and the code is!) but the
-     * conceptual idea that underlies this is surprisingly involved and is belied
-     * by the seeming simplicity of the code.
-     * *********************************************************************** */
-    
-    
     out = Ray(outDirection, intersection);
     outColor = texture;
     pdf = glm::dot(localBasis[2], outDirection) / M_PI; // PDF of *sampling* PDF (NOT necessarily scatter PDF)

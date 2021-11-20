@@ -126,6 +126,63 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
             return emissionColor;
         }
         
+        /* ***********************************************************************
+         * Brief Interlude: Monte Carlo Importance Sampling
+         * -----------------------------------------------------------------------
+         * The next chunk of code is the *crux of the Monte Carlo importance sampling*
+         * in ray tracing. A quick explanation will probably help explain how it works:
+         *
+         * When we want to calculate E_X[A * s * color], we can choose any distribution
+         * for X ~ P, with the initial obvious choice being s. Instead, any other
+         * distribution *can* be used and often will totally change the variance profile
+         * (and therefore the convergence properties). In particular, we want to sample
+         * *more* from the light sources, since those are the most important directions
+         * for the final value of the color.
+         *
+         * The issue with just changing the sampling of the light rays directly is that
+         * (if we do this without changing anything else), the result is no longer
+         * guaranteed to converge with enough samples (!) So, we have to normalize it
+         * by the PDF of the sampling we take. Finding this pdf is mathematically rather
+         * simple, but an absolutely critical step to actually get the correct answer.
+         *
+         * The key realization is that linear interpolations a_i of a family of PDFs
+         * {f_i} in the form f(x) = \sum a_i * f_i(x) is itself a PDF and is precisel
+         * the PDF of interest if you are sampling with some probability from the light
+         * sources! This is what is actually defined in the function above and used
+         * in the following lines of code. It may seem simple (and the code is!) but the
+         * conceptual idea that underlies this is surprisingly involved and is belied
+         * by the seeming simplicity of the code.
+         *
+         * The PDF for rectangular light sources turns out to be simple: d(p,q)^2 / (cos(theta) * A)
+         * *********************************************************************** */
+        const int centerZ = -1500;
+        
+        const int sizeX = 500;
+        const int sizeY = 500;
+        const int sizeZ = 250;
+
+        glm::vec3 randomLightPoint(
+                                   glm::linearRand(-sizeX / 2.0, sizeX / 2.0),
+                                   sizeY,
+                                   glm::linearRand(centerZ - sizeZ / 2.0, centerZ + sizeZ / 2.0)
+        );
+        glm::vec3 dirToLight = randomLightPoint - closestIntersectionPoint;
+        float distToLight2 = glm::dot(dirToLight, dirToLight);
+        dirToLight = glm::normalize(dirToLight);
+        
+        if (glm::dot(dirToLight, normal) < 0) {
+            return emissionColor;
+        }
+        
+        float lightArea = 125000;
+        float cosineAlpha = fabs(dirToLight.y);
+        if (cosineAlpha < 0.0001) {
+            return emissionColor;
+        }
+        
+        pdf = distToLight2 / (cosineAlpha * lightArea);
+        scatteredRay.direction = dirToLight;
+        
         // recall: E_{X ~ P}[A * color * (s / P)] is an MIS estimate w/ sampling distribution P and scatter S
         // this equation maps exactly to this line of code, with scatterPDF being S and pdf being P
         return emissionColor + scatteredColor * castRay(scene, scatteredRay, bounce - 1) *
