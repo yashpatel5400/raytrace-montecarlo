@@ -68,5 +68,10 @@ Scene generateBallScene();
 Scene generateCornellBoxScene();
 
 Color castRay(const Scene& scene, const Ray& ray, int bounce);
+void populateClosestIntersection(const Scene& scene,
+                                const Ray& ray,
+                                std::shared_ptr<Geometry>& closestObject,
+                                float& closestIntersection,
+                                glm::vec3& closestIntersectionPoint);
 
 #endif /* scene_hpp */

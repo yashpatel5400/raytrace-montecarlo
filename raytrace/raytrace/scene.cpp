@@ -62,7 +62,7 @@ Scene generateCornellBoxScene() {
     scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, -sizeX, true, 0.0, std::make_shared<Lambertian>(GREEN)); // left
     scene.addYZPlane(-sizeY, centerZ - sizeZ, sizeY, centerZ + sizeZ, sizeX, false, 0.0, std::make_shared<Lambertian>(RED)); // right
     scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, -sizeY, true, 0.0, std::make_shared<Lambertian>(WHITE)); // bottom
-    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, true, 0.0, std::make_shared<Lambertian>(WHITE)); // top
+    scene.addXZPlane(-sizeX, centerZ - sizeZ, sizeX, centerZ + sizeZ, sizeY, false, 0.0, std::make_shared<Lambertian>(WHITE)); // top
     
     scene.addXZPlane(-sizeX / 2.0, centerZ - sizeZ / 2.0,
                      sizeX / 2.0, centerZ + sizeZ / 2.0, sizeY - .005, true, 0.0, std::make_shared<Light>(LIGHT_GRAY)); // on ceilling
@@ -84,6 +84,22 @@ Scene generateCornellBoxScene() {
     return scene;
 }
 
+void populateClosestIntersection(const Scene& scene,
+                                 const Ray& ray,
+                                 std::shared_ptr<Geometry>& closestObject,
+                                 float& closestIntersection,
+                                 glm::vec3& closestIntersectionPoint) {
+    for (const std::shared_ptr<Geometry>& geometry : scene.geometry) {
+        glm::vec3 intersectionPoint;
+        float intersection = geometry->intersect(ray, intersectionPoint);
+        if (intersection > 0 && intersection < closestIntersection) {
+            closestIntersection = intersection;
+            closestIntersectionPoint = intersectionPoint;
+            closestObject = geometry;
+        }
+    }
+}
+
 /**
  * returns color for the intersection of the ray with the scene. note that THIS is
  * where all the interesting Monte Carlo sampling will be happening!
@@ -97,15 +113,7 @@ Color castRay(const Scene& scene, const Ray& ray, int bounce) {
     std::shared_ptr<Geometry> closestObject;
     float closestIntersection = std::numeric_limits<float>::max();
     glm::vec3 closestIntersectionPoint;
-    for (const std::shared_ptr<Geometry>& geometry : scene.geometry) {
-        glm::vec3 intersectionPoint;
-        float intersection = geometry->intersect(ray, intersectionPoint);
-        if (intersection > 0 && intersection < closestIntersection) {
-            closestIntersection = intersection;
-            closestIntersectionPoint = intersectionPoint;
-            closestObject = geometry;
-        }
-    }
+    populateClosestIntersection(scene, ray, closestObject, closestIntersection, closestIntersectionPoint);
     
     if (closestIntersection < std::numeric_limits<float>::max()) {
         glm::vec3 normal = closestObject->normal(closestIntersectionPoint);

@@ -13,7 +13,7 @@
 
 #define WHITE Color(1.00, 1.00, 1.00)
 #define SILVER Color(.75, .75, .75)
-#define GRAY Color(.50, .50, .50)
+#define GRAY Color(.40, .40, .40)
 #define BLACK Color(0, 0, 0)
 #define RED Color(1.00, 0, 0)
 #define MAROON Color(.50, 0, 0)

@@ -157,9 +157,8 @@ const bool Lambertian::scatter(const Ray& in,
      * The PDF for rectangular light sources turns out to be simple: d(p,q)^2 / (cos(theta) * A)
      * *********************************************************************** */
     glm::vec3 outDirection;
-    glm::mat3 localBasis = localCoordSystem(normal);
     
-    std::vector<float> alphas = { 0.4, 0.7 } ; // mixing between light, sphere, and (implicit rest) random
+    std::vector<float> alphas = { .4, 0.4 } ; // mixing between light, sphere, and (implicit rest) random
     const float randSampling = glm::linearRand(0.0f, 1.0f);
     if (randSampling < alphas[0]) {
         glm::vec3 randomLightPoint(
@@ -174,12 +173,15 @@ const bool Lambertian::scatter(const Ray& in,
         const float sphereRadius = 200.0;
         glm::vec3 directionToCenter = sphereCenter - intersection;
         float sphereDistanceSq = glm::dot(directionToCenter, directionToCenter);
-
+        directionToCenter = glm::normalize(directionToCenter);
+        
+        glm::mat3 localBasis = localCoordSystem(directionToCenter);
         glm::vec3 globalRandomDirection = uniformlySampleSphere(sphereRadius, sphereDistanceSq);
         outDirection = glm::normalize(localBasis * globalRandomDirection);
     }
     else {
         // need to do change of basis to do sampling from out of the normal of intersection
+        glm::mat3 localBasis = localCoordSystem(normal);
         glm::vec3 globalRandomDirection = uniformlySampleHemisphere();
         outDirection = glm::normalize(localBasis * globalRandomDirection);
         // edge case that we should avoid
@@ -249,7 +251,8 @@ const bool Dielectric::scatter(const Ray& in,
     float rTheta = r02 + (1 - r02) * pow((1 - cosTheta), 5.0);
     float random = glm::linearRand(0.0f, 1.0f);
     
-    glm::vec3 outDirection = sinTheta * eta > 1.0 || random < rTheta
+    bool doReflection = sinTheta * eta > 1.0 || random < rTheta;
+    glm::vec3 outDirection = doReflection
         ? glm::reflect(in.direction, normal)
         : glm::refract(in.direction, normal, eta);
     out = Ray(outDirection, intersection);
