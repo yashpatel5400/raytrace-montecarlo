@@ -158,46 +158,50 @@ const bool Lambertian::scatter(const Ray& in,
      * *********************************************************************** */
     glm::vec3 outDirection;
     
-    std::vector<float> alphas = { .4, 0.4 } ; // mixing between light, sphere, and (implicit rest) random
-    const float randSampling = glm::linearRand(0.0f, 1.0f);
-    if (randSampling < alphas[0]) {
-        glm::vec3 randomLightPoint(
-                                   glm::linearRand(-sizeX / 2.0, sizeX / 2.0),
-                                   sizeY - .005,
-                                   glm::linearRand(centerZ - sizeZ / 2.0, centerZ + sizeZ / 2.0)
-        );
-        outDirection = glm::normalize(randomLightPoint - intersection);
-    }
-    else if (randSampling < alphas[1]) {
-        glm::vec3 sphereCenter = glm::vec3(175.0, -3.0 * sizeY / 5.0, 200.0 + centerZ - sizeZ / 4.0);
-        const float sphereRadius = 200.0;
-        glm::vec3 directionToCenter = sphereCenter - intersection;
-        float sphereDistanceSq = glm::dot(directionToCenter, directionToCenter);
-        directionToCenter = glm::normalize(directionToCenter);
-        
-        glm::mat3 localBasis = localCoordSystem(directionToCenter);
-        glm::vec3 globalRandomDirection = uniformlySampleSphere(sphereRadius, sphereDistanceSq);
-        outDirection = glm::normalize(localBasis * globalRandomDirection);
-    }
-    else {
-        // need to do change of basis to do sampling from out of the normal of intersection
-        glm::mat3 localBasis = localCoordSystem(normal);
-        glm::vec3 globalRandomDirection = uniformlySampleHemisphere();
-        outDirection = glm::normalize(localBasis * globalRandomDirection);
-        // edge case that we should avoid
-        const float kSmidgen = 1e-5;
-        if (fabs(outDirection.x) < kSmidgen && fabs(outDirection.y) < kSmidgen && fabs(outDirection.z) < kSmidgen) {
-            outDirection = normal;
+    // TODO: this is a TOTAL hack to get around the firefly issues seen in the renders -- unclear what the cause is
+    while (pdf < 0.15) {
+        std::vector<float> alphas = { .5, 0.0 } ; // mixing between light, sphere, and (implicit rest) random
+        const float randSampling = glm::linearRand(0.0f, 1.0f);
+        if (randSampling < alphas[0]) {
+            glm::vec3 randomLightPoint(
+                                       glm::linearRand(-sizeX / 2.0, sizeX / 2.0),
+                                       sizeY - .005,
+                                       glm::linearRand(centerZ - sizeZ / 2.0, centerZ + sizeZ / 2.0)
+            );
+            outDirection = glm::normalize(randomLightPoint - intersection);
         }
+        else if (randSampling < alphas[1]) {
+            glm::vec3 sphereCenter = glm::vec3(175.0, -3.0 * sizeY / 5.0, 200.0 + centerZ - sizeZ / 4.0);
+            const float sphereRadius = 200.0;
+            glm::vec3 directionToCenter = sphereCenter - intersection;
+            float sphereDistanceSq = glm::dot(directionToCenter, directionToCenter);
+            directionToCenter = glm::normalize(directionToCenter);
+            
+            glm::mat3 localBasis = localCoordSystem(directionToCenter);
+            glm::vec3 globalRandomDirection = uniformlySampleSphere(sphereRadius, sphereDistanceSq);
+            outDirection = glm::normalize(localBasis * globalRandomDirection);
+        }
+        else {
+            // need to do change of basis to do sampling from out of the normal of intersection
+            glm::mat3 localBasis = localCoordSystem(normal);
+            glm::vec3 globalRandomDirection = uniformlySampleHemisphere();
+            outDirection = glm::normalize(localBasis * globalRandomDirection);
+            // edge case that we should avoid
+            const float kSmidgen = 1e-5;
+            if (fabs(outDirection.x) < kSmidgen && fabs(outDirection.y) < kSmidgen && fabs(outDirection.z) < kSmidgen) {
+                outDirection = normal;
+            }
+        }
+        
+        out = Ray(outDirection, intersection);
+        outColor = texture;
+        
+        float lightPDF = computeLightPDF(out);
+        float spherePDF = computeSpherePDF(out);
+        float hemispherePDF = glm::dot(normal, outDirection) / M_PI; // PDF of *sampling* PDF (NOT necessarily scatter PDF)
+    //    pdf = alphas[0] * lightPDF + (alphas[1] - alphas[0]) * spherePDF + (1 - alphas[1]) * hemispherePDF;
+        pdf = alphas[0] * lightPDF + (1 - alphas[0]) * hemispherePDF;
     }
-    
-    out = Ray(outDirection, intersection);
-    outColor = texture;
-    
-    float lightPDF = computeLightPDF(out);
-    float spherePDF = computeSpherePDF(out);
-    float hemispherePDF = glm::dot(normal, outDirection) / M_PI; // PDF of *sampling* PDF (NOT necessarily scatter PDF)
-    pdf = alphas[0] * lightPDF + (alphas[1] - alphas[0]) * spherePDF + (1 - alphas[1]) * hemispherePDF;
     
     return true;
 }
