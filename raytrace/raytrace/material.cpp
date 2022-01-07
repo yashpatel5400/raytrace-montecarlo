@@ -159,7 +159,7 @@ const bool Lambertian::scatter(const Ray& in,
     glm::vec3 outDirection;
     
     // TODO: this is a TOTAL hack to get around the firefly issues seen in the renders -- unclear what the cause is
-    const float kFireflyPdfThresh = 0.15;
+    const float kFireflyPdfThresh = 0.025;
     while (pdf < kFireflyPdfThresh) {
         std::vector<float> alphas = { .5, 0.0 } ; // mixing between light, sphere, and (implicit rest) random
         const float randSampling = glm::linearRand(0.0f, 1.0f);
